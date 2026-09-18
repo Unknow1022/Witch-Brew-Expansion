@@ -1,0 +1,15 @@
+{
+  "title": "Witch Brew Expansion",
+  "requires-steamodded": true,
+  "requires-talisman": false,
+  "categories": [
+    "Content",
+    "Joker"
+  ],
+  "author": "Unknow102",
+  "repo": "https://github.com/Unknow1022/Witch-Brew-Expansion",
+  "downloadURL": "https://github.com/Unknow1022/Witch-Brew-Expansion/archive/refs/heads/main.zip",
+  "folderName": "witch_brew",
+  "version": "1.4",
+  "automatic-version-check": true
+}

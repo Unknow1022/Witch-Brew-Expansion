@@ -1,0 +1,19 @@
+{
+    "id": "Witch_brew",
+    "name": "Witch_Brew_Expansion",
+    "version_number": "1.4.1",
+    "website_url": "https://github.com/Unknow1022/Witch-Brew-Expansion",
+    "description": "Witch Brew Expansion: There no guide, Fun jokers, Compatible with Joker Display, Card Sleeves, Some decks, tags, enchants, JOB CARDS, MUSICAL JOKERS AND MORE!!",
+    "dependencies": [],
+    "author": [
+        "Unknow102"
+    ],
+    "prefix": "Witch_brew",
+    "main_file": "WitcherExpansion.lua",
+    "version": "1.4.1",
+    "optional_dependencies": [
+        "CardSleeves",
+        "JokerDisplay",
+        "malverk"
+    ]
+}
