@@ -942,20 +942,24 @@ SMODS.Consumable {
                 card:juice_up(0.4, 0.6)
                 local returned_count = 0
                 if G.GAME.last_played_hand_cards and G.discard and G.hand then
+                    local to_return = {}
                     for _, target in ipairs(G.GAME.last_played_hand_cards) do
                         for i = #G.discard.cards, 1, -1 do
                             local dc = G.discard.cards[i]
                             if dc == target then
-                                dc.states.visible = true
-                                dc.states.drag.can = true
-                                dc.states.collide.can = true
-                                dc.facing = 'front'
-                                G.discard:remove_card(dc)
-                                G.hand:emplace(dc)
-                                returned_count = returned_count + 1
+                                table.insert(to_return, dc)
                                 break
                             end
                         end
+                    end
+                    local total = #to_return
+                    for i, dc in ipairs(to_return) do
+                        dc.states.visible = true
+                        dc.states.drag.can = true
+                        dc.states.collide.can = true
+                        dc.facing = 'back'
+                        draw_card(G.discard, G.hand, i * 100 / math.max(1, total), 'up', true, dc)
+                        returned_count = returned_count + 1
                     end
                 end
                 card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Rewind! +' .. returned_count, colour = G.C.BLUE })
@@ -1133,7 +1137,12 @@ function create_card_for_shop(area)
             for _, v in ipairs(G.GAME.tags) do
                 if not forced_tag then
                     forced_tag = v:apply_to_run({ type = 'store_joker_create', area = area })
-                    if forced_tag then return orig_create_card_for_shop(area) end
+                    if forced_tag then
+                        for _, vv in ipairs(G.GAME.tags) do
+                            if vv:apply_to_run({ type = 'store_joker_modify', card = forced_tag }) then break end
+                        end
+                        return forced_tag
+                    end
                 end
             end
         end

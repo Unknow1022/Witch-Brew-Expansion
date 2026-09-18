@@ -122,7 +122,7 @@ SMODS.Tag {
     end
 }
 
--- 4. Brew Tag (Tag de Brebaje)
+-- 4. Brew Tag
 SMODS.Tag {
     key = 'brew',
     atlas = 'witch_brew_tags',
@@ -131,9 +131,9 @@ SMODS.Tag {
     loc_txt = {
         name = 'Brew Tag',
         text = {
-            "Genera {C:attention}2{} consumibles",
-            "de {C:purple}Witcher Brew{}",
-            "{C:inactive}(Requiere espacio){}"
+            "Creates {C:attention}2{} {C:purple}Witcher Brew{}",
+            "consumables",
+            "{C:inactive}(Must have room){}"
         }
     },
     apply = function(self, tag, context)
@@ -154,7 +154,7 @@ SMODS.Tag {
     end
 }
 
--- 5. Mutagen Tag (Tag de Mutágeno)
+-- 5. Mutagen Tag
 SMODS.Tag {
     key = 'mutagen',
     atlas = 'witch_brew_tags',
@@ -163,8 +163,8 @@ SMODS.Tag {
     loc_txt = {
         name = 'Mutagen Tag',
         text = {
-            "Añade un {C:attention}Sello{} o {C:attention}Mejora{}",
-            "a {C:attention}2{} cartas de tu baraja"
+            "Adds a {C:attention}Seal{} or {C:attention}Enhancement{}",
+            "to {C:attention}2{} cards in your deck"
         }
     },
     apply = function(self, tag, context)
@@ -195,7 +195,7 @@ SMODS.Tag {
     end
 }
 
--- 6. Silver Tag (Tag de Filo de Plata)
+-- 6. Silver Tag
 SMODS.Tag {
     key = 'silver',
     atlas = 'witch_brew_tags',
@@ -204,8 +204,8 @@ SMODS.Tag {
     loc_txt = {
         name = 'Silver Tag',
         text = {
-            "{C:attention}Desactiva{} el Boss Blind",
-            "del {C:attention}Ante actual{}"
+            "{C:attention}Disables{} the Boss Blind",
+            "for the {C:attention}current Ante{}"
         }
     },
     apply = function(self, tag, context)
@@ -225,7 +225,7 @@ SMODS.Tag {
     end
 }
 
--- 7. Bounty Tag (Tag de Recompensa)
+-- 7. Bounty Tag
 SMODS.Tag {
     key = 'bounty',
     atlas = 'witch_brew_tags',
@@ -234,8 +234,8 @@ SMODS.Tag {
     loc_txt = {
         name = 'Bounty Tag',
         text = {
-            "Otorga {C:money}$20{} si derrotas",
-            "la siguiente Ciega en {C:attention}1 mano{}"
+            "Gives {C:money}$20{} if you defeat",
+            "the next Blind in {C:attention}1 hand{}"
         }
     },
     apply = function(self, tag, context)
@@ -255,7 +255,7 @@ SMODS.Tag {
     end
 }
 
--- 8. Amalgam Tag (Tag de Amalgama)
+-- 8. Amalgam Tag
 SMODS.Tag {
     key = 'amalgam',
     atlas = 'witch_brew_tags',
@@ -264,18 +264,14 @@ SMODS.Tag {
     loc_txt = {
         name = 'Amalgam Tag',
         text = {
-            "La siguiente tienda otorga {C:attention}2 Jokers{}",
-            "de combinación y la {C:purple}Poción de Amalgama{}",
-            "{C:red}Pierdes todo tu dinero actual{}"
+            "Next shop grants {C:attention}2 combination Jokers{}",
+            "and an {C:purple}Amalgam Potion{}",
+            "{C:red}Lose all current money{}"
         }
     },
     apply = function(self, tag, context)
-        if context.type == 'shop_final_pass' or context.type == 'shop_start' then
-            tag:yep('+', G.C.PURPLE, function()
-                if G.GAME and G.GAME.dollars and G.GAME.dollars > 0 then
-                    ease_dollars(-G.GAME.dollars, true)
-                end
-
+        if context.type == 'store_joker_create' then
+            if not tag.ability.amalgam_pair then
                 local recipes = G.AMALGAM_RECIPES or {
                     { pair = { 'blueprint', 'brainstorm' } },
                     { pair = { 'midas_mask', 'vampire' } },
@@ -284,30 +280,60 @@ SMODS.Tag {
                     { pair = { 'four_fingers', 'shortcut' } }
                 }
                 local recipe = pseudorandom_element(recipes, pseudoseed('amalgam_tag'))
-                if recipe and recipe.pair and G.shop_jokers then
-                    for _, jk in ipairs(recipe.pair) do
-                        local full_k = string.find(jk, '^j_') and jk or ('j_' .. jk)
-                        local c = create_card('Joker', G.shop_jokers, nil, nil, nil, nil, full_k, 'amalgam_tag')
-                        if c then
-                            c.cost = 0
-                            c.from_tag = true
-                            G.shop_jokers:emplace(c)
-                        end
-                    end
+                tag.ability.amalgam_pair = (recipe and recipe.pair) or { 'blueprint', 'brainstorm' }
+                tag.ability.amalgam_idx = 1
+                if G.GAME and G.GAME.dollars and G.GAME.dollars > 0 then
+                    ease_dollars(-G.GAME.dollars, true)
                 end
+            end
 
+            local jk = tag.ability.amalgam_pair[tag.ability.amalgam_idx or 1]
+            local full_k = string.find(jk, '^j_') and jk or ('j_' .. jk)
+            local card = create_card('Joker', context.area, nil, nil, nil, nil, full_k, 'amalgam_tag')
+            create_shop_card_ui(card, 'Joker', context.area)
+            card.ability.couponed = true
+            card:set_cost()
+            card.states.visible = false
+
+            if tag.ability.amalgam_idx == 1 then
+                tag.ability.card1 = card
+                tag.ability.amalgam_idx = 2
+                return card
+            else
+                local card1 = tag.ability.card1
+                local card2 = card
+                tag:yep('+', G.C.PURPLE, function()
+                    if card1 then card1:start_materialize() end
+                    if card2 then card2:start_materialize() end
+                    local pot_key = (G.P_CENTERS and G.P_CENTERS['c_Witch_brew_potion_amalgama'] and 'c_Witch_brew_potion_amalgama') or 'c_potion_amalgama'
+                    if G.consumeables then
+                        if #G.consumeables.cards >= G.consumeables.config.card_limit then
+                            G.consumeables.config.card_limit = G.consumeables.config.card_limit + 1
+                        end
+                        local pot = create_card('Potion', G.consumeables, nil, nil, nil, nil, pot_key, 'amalgam_tag')
+                        pot:add_to_deck()
+                        G.consumeables:emplace(pot)
+                        pot:start_materialize()
+                    end
+                    return true
+                end)
+                tag.triggered = true
+                return card2
+            end
+        elseif context.type == 'shop_final_pass' and tag.ability.amalgam_idx == 2 and not tag.triggered then
+            local card1 = tag.ability.card1
+            tag:yep('+', G.C.PURPLE, function()
+                if card1 then card1:start_materialize() end
                 local pot_key = (G.P_CENTERS and G.P_CENTERS['c_Witch_brew_potion_amalgama'] and 'c_Witch_brew_potion_amalgama') or 'c_potion_amalgama'
-                if G.consumeables and #G.consumeables.cards < G.consumeables.config.card_limit then
+                if G.consumeables then
+                    if #G.consumeables.cards >= G.consumeables.config.card_limit then
+                        G.consumeables.config.card_limit = G.consumeables.config.card_limit + 1
+                    end
                     local pot = create_card('Potion', G.consumeables, nil, nil, nil, nil, pot_key, 'amalgam_tag')
                     pot:add_to_deck()
                     G.consumeables:emplace(pot)
-                elseif G.shop_jokers then
-                    local pot = create_card('Potion', G.shop_jokers, nil, nil, nil, nil, pot_key, 'amalgam_tag')
-                    pot.cost = 0
-                    pot.from_tag = true
-                    G.shop_jokers:emplace(pot)
+                    pot:start_materialize()
                 end
-
                 return true
             end)
             tag.triggered = true
@@ -316,7 +342,7 @@ SMODS.Tag {
     end
 }
 
--- 9. Dark Alchemy Tag (Tag de Alquimia Oscura)
+-- 9. Dark Alchemy Tag
 SMODS.Tag {
     key = 'alquimia_oscura',
     atlas = 'witch_brew_tags',
@@ -325,9 +351,9 @@ SMODS.Tag {
     loc_txt = {
         name = 'Dark Alchemy Tag',
         text = {
-            "Jokers de la siguiente tienda y paquetes",
-            "tienen {C:attention}x10{} probabilidad de ser {C:dark_edition}Negativos{}",
-            "{C:red}+1${} al costo de reroll"
+            "Jokers in next shop and booster packs",
+            "have {C:attention}10X{} chance to be {C:dark_edition}Negative{}",
+            "{C:red}+$1{} to reroll cost"
         }
     },
     apply = function(self, tag, context)
@@ -349,7 +375,7 @@ SMODS.Tag {
     end
 }
 
--- 10. Contractor Tag (Tag Contratista)
+-- 10. Contractor Tag
 SMODS.Tag {
     key = 'contratista',
     atlas = 'witch_brew_tags',
@@ -359,8 +385,8 @@ SMODS.Tag {
     loc_txt = {
         name = 'Contractor Tag',
         text = {
-            "Otorga un {C:attention}Mega Paquete{}",
-            "de {C:attention}Trabajo{} gratis"
+            "Gives a free",
+            "{C:attention}Mega Job Application{}"
         }
     },
     loc_vars = function(self, info_queue)

@@ -3086,8 +3086,8 @@ if SMODS and SMODS.Sound then
     SMODS.Sound {
         key = "music_witch_brew_special",
         path = "secret_joker_music.ogg",
-        pitch = 1,
-        volume = 0.7,
+        pitch = 0.95,
+        volume = 0.5,
         select_music_track = function(self)
             if not is_secret_music_enabled() then return nil end
             -- 1. Paquetes especiales del mod
