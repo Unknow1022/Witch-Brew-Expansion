@@ -551,12 +551,15 @@ end
 -- Blind hook for Stick Penalty & Custom Boss Backgrounds
 -- Helper to reset UI and background colors back to Balatro originals after Boss Blind
 function reset_witch_brew_boss_ui(state)
-    -- If currently in an active, non-disabled Witch_brew boss blind during gameplay, NEVER reset!
-    if G.GAME and G.GAME.blind and G.GAME.blind.boss and not G.GAME.blind.disabled then
-        if G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.HAND_PLAYED or G.STATE == G.STATES.DRAW_TO_HAND then
-            if get_witch_brew_blind_theme and get_witch_brew_blind_theme(G.GAME.blind) then
-                return
-            end
+    -- If currently in an active, non-disabled blind during round gameplay, NEVER reset!
+    if G.GAME and G.GAME.blind and not G.GAME.blind.disabled then
+        local cur_state = state or (G and G.STATE)
+        if cur_state == G.STATES.SELECTING_HAND 
+           or cur_state == G.STATES.HAND_PLAYED 
+           or cur_state == G.STATES.DRAW_TO_HAND 
+           or cur_state == G.STATES.PLAY_TAROT 
+           or (G.TAROT_INTERRUPT and G.TAROT_INTERRUPT ~= G.STATES.SHOP and G.TAROT_INTERRUPT ~= G.STATES.ROUND_EVAL and G.TAROT_INTERRUPT ~= G.STATES.BLIND_SELECT) then
+            return
         end
     end
 
@@ -604,6 +607,30 @@ function reset_witch_brew_boss_ui(state)
             special_colour = bg_col,
             contrast = 1
         }
+    end
+end
+
+-- Guard ease_background_colour from resetting to default background when active in a custom/boss blind during round
+if ease_background_colour then
+    local orig_ease_bg = ease_background_colour
+    function ease_background_colour(args)
+        if args and G.GAME and G.GAME.blind and not G.GAME.blind.disabled then
+            local in_round = (G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.HAND_PLAYED or G.STATE == G.STATES.DRAW_TO_HAND or G.STATE == G.STATES.PLAY_TAROT or (G.TAROT_INTERRUPT and G.TAROT_INTERRUPT ~= G.STATES.SHOP and G.TAROT_INTERRUPT ~= G.STATES.ROUND_EVAL and G.TAROT_INTERRUPT ~= G.STATES.BLIND_SELECT))
+            if in_round then
+                local theme = get_witch_brew_blind_theme and get_witch_brew_blind_theme(G.GAME.blind)
+                local def_small = (G.C and G.C.BLIND and G.C.BLIND['Small'])
+                local is_default_bg = (args.new_colour == def_small) or (type(args.new_colour) == 'table' and def_small and args.new_colour[1] == def_small[1] and args.new_colour[2] == def_small[2] and args.new_colour[3] == def_small[3])
+                if theme and is_default_bg then
+                    args.new_colour = theme.new_colour
+                    args.special_colour = theme.special_colour
+                    args.tertiary_colour = theme.tertiary_colour
+                    args.contrast = theme.contrast or 2
+                elseif is_default_bg and G.GAME.blind.boss then
+                    return
+                end
+            end
+        end
+        return orig_ease_bg(args)
     end
 end
 
@@ -775,7 +802,31 @@ function Card:use_consumeable(area, copier)
         play_sound('foil1', 0.75, 0.7)
     end
 
-    return use_card_ref(self, area, copier)
+    local ret = use_card_ref(self, area, copier)
+
+    -- Ensure custom/boss blind background is preserved when using any consumable during round gameplay
+    if G.GAME and G.GAME.blind and not G.GAME.blind.disabled then
+        local blind = G.GAME.blind
+        local theme = get_witch_brew_blind_theme and get_witch_brew_blind_theme(blind)
+        if G.E_MANAGER then
+            G.E_MANAGER:add_event(Event({
+                trigger = 'after',
+                delay = 0.1,
+                func = function()
+                    if G.GAME and G.GAME.blind and not G.GAME.blind.disabled and (G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.PLAY_TAROT or G.STATE == G.STATES.DRAW_TO_HAND) then
+                        if theme and ease_custom_blind_background then
+                            ease_custom_blind_background(blind)
+                        elseif ease_background_colour_blind then
+                            ease_background_colour_blind(G.STATE or G.STATES.SELECTING_HAND)
+                        end
+                    end
+                    return true
+                end
+            }))
+        end
+    end
+
+    return ret
 end
 
 -- Safety guard for Card:update_alert when ability is nil or card is uninitialized
@@ -2660,27 +2711,24 @@ if Game and Game.init_game_object then
 end
 
 -- =========================================================================
--- MAIN MENU AMBIENT BACKGROUND: NEGRO, VERDE OSCURO Y BLANCO
+-- INTRO BACKGROUND: MORADO Y VERDE OSCURO
 -- =========================================================================
 
-function apply_witch_brew_menu_bg(force)
+function apply_witch_brew_intro_bg(force)
     local cfg = (get_witch_brew_config and get_witch_brew_config())
         or (SMODS and SMODS.Mods and SMODS.Mods['Witch_brew'] and SMODS.Mods['Witch_brew'].config)
         or {}
     if force or cfg.custom_menu_bg ~= false then
-        G.C.WITCH_BREW_BG_BLACK = G.C.WITCH_BREW_BG_BLACK or {0.05, 0.05, 0.05, 1.0}
-        G.C.WITCH_BREW_BG_DARKGREEN = G.C.WITCH_BREW_BG_DARKGREEN or {0.04, 0.22, 0.09, 1.0}
-        G.C.WITCH_BREW_BG_WHITE = G.C.WITCH_BREW_BG_WHITE or {0.95, 0.95, 0.95, 1.0}
-        G.C.WITCH_BREW_PURPLE = G.C.WITCH_BREW_BG_BLACK
-        G.C.WITCH_BREW_RED = G.C.WITCH_BREW_BG_DARKGREEN
+        G.C.WITCH_BREW_INTRO_PURPLE = G.C.WITCH_BREW_INTRO_PURPLE or HEX('4c196b')
+        G.C.WITCH_BREW_INTRO_DARKGREEN = G.C.WITCH_BREW_INTRO_DARKGREEN or HEX('0a3314')
         if G.SPLASH_BACK then
             G.SPLASH_BACK:define_draw_steps({{
                 shader = 'splash',
                 send = {
                     {name = 'time', ref_table = G.TIMERS, ref_value = 'REAL_SHADER'},
                     {name = 'vort_speed', val = 0.4},
-                    {name = 'colour_1', ref_table = G.C, ref_value = 'WITCH_BREW_BG_BLACK'},
-                    {name = 'colour_2', ref_table = G.C, ref_value = 'WITCH_BREW_BG_DARKGREEN'},
+                    {name = 'colour_1', ref_table = G.C, ref_value = 'WITCH_BREW_INTRO_PURPLE'},
+                    {name = 'colour_2', ref_table = G.C, ref_value = 'WITCH_BREW_INTRO_DARKGREEN'},
                     {name = 'mid_flash', ref_table = {mid_flash = 0}, ref_value = 'mid_flash'},
                     {name = 'vort_offset', val = 0},
                 }
@@ -2688,9 +2736,46 @@ function apply_witch_brew_menu_bg(force)
         end
         if ease_background_colour then
             ease_background_colour{
-                new_colour = G.C.WITCH_BREW_BG_BLACK,
-                special_colour = G.C.WITCH_BREW_BG_DARKGREEN,
-                tertiary_colour = G.C.WITCH_BREW_BG_WHITE,
+                new_colour = G.C.WITCH_BREW_INTRO_PURPLE,
+                special_colour = G.C.WITCH_BREW_INTRO_DARKGREEN,
+                contrast = 2.0
+            }
+        end
+    end
+end
+
+-- =========================================================================
+-- MAIN MENU AMBIENT BACKGROUND: NEGRO Y MORADO
+-- =========================================================================
+
+function apply_witch_brew_menu_bg(force, change_context)
+    local cfg = (get_witch_brew_config and get_witch_brew_config())
+        or (SMODS and SMODS.Mods and SMODS.Mods['Witch_brew'] and SMODS.Mods['Witch_brew'].config)
+        or {}
+    if force or cfg.custom_menu_bg ~= false then
+        G.C.WITCH_BREW_MENU_BLACK = G.C.WITCH_BREW_MENU_BLACK or HEX('08080c')
+        G.C.WITCH_BREW_MENU_PURPLE = G.C.WITCH_BREW_MENU_PURPLE or HEX('4c196b')
+        local splash_args = {mid_flash = change_context == 'splash' and 1.6 or 0.}
+        if change_context == 'splash' then
+            ease_value(splash_args, 'mid_flash', -1.6, nil, nil, nil, 4)
+        end
+        if G.SPLASH_BACK then
+            G.SPLASH_BACK:define_draw_steps({{
+                shader = 'splash',
+                send = {
+                    {name = 'time', ref_table = G.TIMERS, ref_value = 'REAL_SHADER'},
+                    {name = 'vort_speed', val = 0.4},
+                    {name = 'colour_1', ref_table = G.C, ref_value = 'WITCH_BREW_MENU_BLACK'},
+                    {name = 'colour_2', ref_table = G.C, ref_value = 'WITCH_BREW_MENU_PURPLE'},
+                    {name = 'mid_flash', ref_table = splash_args, ref_value = 'mid_flash'},
+                    {name = 'vort_offset', val = 0},
+                }
+            }})
+        end
+        if ease_background_colour then
+            ease_background_colour{
+                new_colour = G.C.WITCH_BREW_MENU_BLACK,
+                special_colour = G.C.WITCH_BREW_MENU_PURPLE,
                 contrast = 2.0
             }
         end
@@ -2718,6 +2803,7 @@ if Game and Game.splash_screen then
     local orig_splash_screen = Game.splash_screen
     function Game:splash_screen()
         orig_splash_screen(self)
+        apply_witch_brew_intro_bg()
         G.E_MANAGER:add_event(Event({
             trigger = 'immediate',
             func = function()
@@ -2800,37 +2886,7 @@ if Game and Game.main_menu then
     local orig_game_main_menu = Game.main_menu
     function Game:main_menu(change_context)
         orig_game_main_menu(self, change_context)
-        local cfg = (get_witch_brew_config and get_witch_brew_config())
-            or (SMODS and SMODS.Mods and SMODS.Mods['Witch_brew'] and SMODS.Mods['Witch_brew'].config)
-            or {}
-        if cfg.custom_menu_bg ~= false and G.SPLASH_BACK then
-            G.C.WITCH_BREW_BG_BLACK = G.C.WITCH_BREW_BG_BLACK or {0.05, 0.05, 0.05, 1.0}
-            G.C.WITCH_BREW_BG_DARKGREEN = G.C.WITCH_BREW_BG_DARKGREEN or {0.04, 0.22, 0.09, 1.0}
-            G.C.WITCH_BREW_BG_WHITE = G.C.WITCH_BREW_BG_WHITE or {0.95, 0.95, 0.95, 1.0}
-            G.C.WITCH_BREW_PURPLE = G.C.WITCH_BREW_BG_BLACK
-            G.C.WITCH_BREW_RED = G.C.WITCH_BREW_BG_DARKGREEN
-            local splash_args = {mid_flash = change_context == 'splash' and 1.6 or 0.}
-            ease_value(splash_args, 'mid_flash', -(change_context == 'splash' and 1.6 or 0), nil, nil, nil, 4)
-            G.SPLASH_BACK:define_draw_steps({{
-                shader = 'splash',
-                send = {
-                    {name = 'time', ref_table = G.TIMERS, ref_value = 'REAL_SHADER'},
-                    {name = 'vort_speed', val = 0.4},
-                    {name = 'colour_1', ref_table = G.C, ref_value = 'WITCH_BREW_BG_BLACK'},
-                    {name = 'colour_2', ref_table = G.C, ref_value = 'WITCH_BREW_BG_DARKGREEN'},
-                    {name = 'mid_flash', ref_table = splash_args, ref_value = 'mid_flash'},
-                    {name = 'vort_offset', val = 0},
-                }
-            }})
-            if ease_background_colour then
-                ease_background_colour{
-                    new_colour = G.C.WITCH_BREW_BG_BLACK,
-                    special_colour = G.C.WITCH_BREW_BG_DARKGREEN,
-                    tertiary_colour = G.C.WITCH_BREW_BG_WHITE,
-                    contrast = 2.0
-                }
-            end
-        end
+        apply_witch_brew_menu_bg(nil, change_context)
         spawn_main_menu_secret_joker()
     end
 end
