@@ -3041,11 +3041,28 @@ SMODS.Atlas {
 }
 
 function apply_witch_brew_title_asset()
-    local title_atlas = (G.ASSET_ATLAS and (G.ASSET_ATLAS['Witch_brew_title'] or G.ASSET_ATLAS['witch_brew_title']))
-        or (SMODS and SMODS.Atlases and (SMODS.Atlases['Witch_brew_title'] or SMODS.Atlases['witch_brew_title']))
+    local title_atlas = (G.ASSET_ATLAS and (G.ASSET_ATLAS['witch_brew_title'] or G.ASSET_ATLAS['Witch_brew_title']))
+        or (SMODS and SMODS.Atlases and (SMODS.Atlases['witch_brew_title'] or SMODS.Atlases['Witch_brew_title']))
     if not title_atlas then return end
+    if G.ASSET_ATLAS then
+        if G.ASSET_ATLAS["balatro"] and title_atlas.image then
+            G.ASSET_ATLAS["balatro"].image = title_atlas.image
+        end
+        G.ASSET_ATLAS["balatro"] = title_atlas
+    end
     if G.SPLASH_LOGO then
         G.SPLASH_LOGO.atlas = title_atlas
+        G.SPLASH_LOGO:set_sprite_pos({x = 0, y = 0})
+    end
+end
+
+if Game and Game.main_menu then
+    local orig_game_main_menu = Game.main_menu
+    function Game:main_menu(change_context)
+        apply_witch_brew_title_asset()
+        local res = orig_game_main_menu(self, change_context)
+        apply_witch_brew_title_asset()
+        return res
     end
 end
 

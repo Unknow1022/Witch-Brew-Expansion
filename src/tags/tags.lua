@@ -131,9 +131,8 @@ SMODS.Tag {
     loc_txt = {
         name = 'Brew Tag',
         text = {
-            "Creates {C:attention}2{} {C:purple}Witcher Brew{}",
-            "consumables",
-            "{C:inactive}(Must have room){}"
+            "Gives {C:attention}2{} random",
+            "{C:purple}Potions{}"
         }
     },
     apply = function(self, tag, context)
@@ -264,28 +263,85 @@ SMODS.Tag {
     loc_txt = {
         name = 'Amalgam Tag',
         text = {
-            "Next shop grants {C:attention}2 combination Jokers{}",
-            "and an {C:purple}Amalgam Potion{}",
-            "{C:red}Lose all current money{}"
+            "Next shop grants {C:attention}#1#{},",
+            "{C:attention}#2#{}, and an",
+            "{C:purple}Amalgam Potion{}"
         }
     },
-    apply = function(self, tag, context)
-        if context.type == 'store_joker_create' then
-            if not tag.ability.amalgam_pair then
-                local recipes = G.AMALGAM_RECIPES or {
-                    { pair = { 'blueprint', 'brainstorm' } },
-                    { pair = { 'midas_mask', 'vampire' } },
-                    { pair = { 'hologram', 'certificate' } },
-                    { pair = { 'constellation', 'astronomer' } },
-                    { pair = { 'four_fingers', 'shortcut' } }
-                }
-                local recipe = pseudorandom_element(recipes, pseudoseed('amalgam_tag'))
-                tag.ability.amalgam_pair = (recipe and recipe.pair) or { 'blueprint', 'brainstorm' }
-                tag.ability.amalgam_idx = 1
-                if G.GAME and G.GAME.dollars and G.GAME.dollars > 0 then
-                    ease_dollars(-G.GAME.dollars, true)
+    set_ability = function(self, tag)
+        local recipes = G.AMALGAM_RECIPES or {
+            { pair = { 'blueprint', 'brainstorm' }, key = 'brainprint', name = 'Brainprint' },
+            { pair = { 'midas_mask', 'vampire' }, key = 'midas_vampirico', name = 'Vampiric Midas' },
+            { pair = { 'hologram', 'certificate' }, key = 'programacion_certificacion', name = 'Certified Programming' },
+            { pair = { 'constellation', 'astronomer' }, key = 'viajero_galactico', name = 'Galactic Traveler' },
+            { pair = { 'four_fingers', 'shortcut' }, key = 'calle_colorida', name = 'Colorful Street' }
+        }
+        local used_keys = {}
+        if G.GAME and G.GAME.tags then
+            for _, t in ipairs(G.GAME.tags) do
+                if t ~= tag and t.ability and t.ability.amalgam_recipe_key then
+                    used_keys[t.ability.amalgam_recipe_key] = true
                 end
             end
+        end
+        local available = {}
+        for _, r in ipairs(recipes) do
+            if not used_keys[r.key] then
+                table.insert(available, r)
+            end
+        end
+        if #available == 0 then available = recipes end
+
+        local seed_str = 'amalgam_tag_' .. tostring(tag.ID or G.tagid or 0) .. '_' .. tostring(G.GAME and G.GAME.tag_tally or 0)
+        local chosen = pseudorandom_element(available, pseudoseed(seed_str)) or available[1]
+        tag.ability = tag.ability or {}
+        tag.ability.amalgam_pair = chosen.pair
+        tag.ability.amalgam_recipe_key = chosen.key
+        tag.ability.amalgam_name = chosen.name
+    end,
+    loc_vars = function(self, info_queue, tag)
+        if not (tag and tag.ability and tag.ability.amalgam_pair) then
+            if tag then self:set_ability(tag) end
+        end
+        if tag and tag.ability and tag.ability.amalgam_pair then
+            local j1 = tag.ability.amalgam_pair[1]
+            local j2 = tag.ability.amalgam_pair[2]
+            local k1 = string.find(j1, '^j_') and j1 or ('j_' .. j1)
+            local k2 = string.find(j2, '^j_') and j2 or ('j_' .. j2)
+            local name1 = (G.P_CENTERS and G.P_CENTERS[k1] and localize{type = 'name_text', set = 'Joker', key = k1}) or j1
+            local name2 = (G.P_CENTERS and G.P_CENTERS[k2] and localize{type = 'name_text', set = 'Joker', key = k2}) or j2
+            if info_queue and G.P_CENTERS then
+                if G.P_CENTERS[k1] then table.insert(info_queue, G.P_CENTERS[k1]) end
+                if G.P_CENTERS[k2] then table.insert(info_queue, G.P_CENTERS[k2]) end
+                local pot_k = (G.P_CENTERS and G.P_CENTERS['c_Witch_brew_potion_amalgama'] and 'c_Witch_brew_potion_amalgama') or 'c_potion_amalgama'
+                if G.P_CENTERS[pot_k] then table.insert(info_queue, G.P_CENTERS[pot_k]) end
+            end
+            return { vars = { name1, name2 } }
+        end
+        return { vars = { "Combination Joker 1", "Combination Joker 2" } }
+    end,
+    apply = function(self, tag, context)
+        if context.type == 'shop_start' then
+            local untriggered_amalgams = 0
+            for _, t in ipairs(G.GAME.tags or {}) do
+                if (t.key == 'tag_Witch_brew_amalgam' or t.key == 'amalgam') and not t.triggered then
+                    untriggered_amalgams = untriggered_amalgams + 1
+                end
+            end
+            local needed = untriggered_amalgams * 2
+            if G.GAME and G.GAME.shop and G.GAME.shop.joker_max < needed then
+                G.GAME.shop.joker_max = needed
+            end
+            if G.shop_jokers and G.shop_jokers.config and G.shop_jokers.config.card_limit < needed then
+                G.shop_jokers.config.card_limit = needed
+                G.shop_jokers.T.w = needed * 1.01 * G.CARD_W
+                if G.shop then G.shop:recalculate() end
+            end
+        elseif context.type == 'store_joker_create' then
+            if not (tag.ability and tag.ability.amalgam_pair) then
+                self:set_ability(tag)
+            end
+            tag.ability.amalgam_idx = tag.ability.amalgam_idx or 1
 
             local jk = tag.ability.amalgam_pair[tag.ability.amalgam_idx or 1]
             local full_k = string.find(jk, '^j_') and jk or ('j_' .. jk)
@@ -415,5 +471,66 @@ SMODS.Tag {
     end
 }
 
+-- 11. DNA Tag (Tag ADN)
+SMODS.Tag {
+    key = 'dna',
+    atlas = 'witch_brew_tags',
+    pos = { x = 10, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'DNA Tag',
+        text = {
+            "{C:attention}Click this Tag{} to copy",
+            "the current Blind's Tag",
+            "{C:inactive}(Currently: {C:attention}#1#{C:inactive}){}"
+        }
+    },
+    loc_vars = function(self, info_queue, tag)
+        local current_blind = (G.GAME and G.GAME.blind and G.GAME.blind.get_type and G.GAME.blind:get_type()) or (G.GAME and G.GAME.blind_on_deck) or 'Small'
+        local b_tag_key = G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags[current_blind]
+        if not b_tag_key and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags then
+            b_tag_key = G.GAME.round_resets.blind_tags.Big or G.GAME.round_resets.blind_tags.Small
+        end
+        if info_queue and b_tag_key then
+            table.insert(info_queue, { key = b_tag_key, set = 'Tag' })
+        end
+        local tag_name = (b_tag_key and G.P_TAGS and G.P_TAGS[b_tag_key] and localize{type = 'name_text', set = 'Tag', key = b_tag_key}) or "Blind's Tag"
+        return { vars = { tag_name } }
+    end
+}
 
+local orig_tag_generate_ui = Tag.generate_UI
+function Tag:generate_UI(_size)
+    local tab, sprite = orig_tag_generate_ui(self, _size)
+    if self.key and (self.key == 'tag_Witch_brew_dna' or self.key == 'tag_witch_brew_dna' or self.key == 'dna' or self.key == 'tag_dna') then
+        if sprite then
+            sprite.states.click.can = true
+            sprite.click = function(_self)
+                if not self.HUD_tag or self.triggered then return end
+                if G.CONTROLLER and G.CONTROLLER.dragging and G.CONTROLLER.dragging.target then return end
+                self.triggered = true
+                _self.states.click.can = false
+                _self:juice_up(0.2, 0.2)
+                play_sound('tarot1', 1.1, 0.6)
 
+                local current_blind = (G.GAME and G.GAME.blind and G.GAME.blind.get_type and G.GAME.blind:get_type()) or (G.GAME and G.GAME.blind_on_deck) or 'Small'
+                local tag_to_spawn = nil
+                if G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags[current_blind] then
+                    tag_to_spawn = G.GAME.round_resets.blind_tags[current_blind]
+                elseif G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and (G.GAME.round_resets.blind_tags.Big or G.GAME.round_resets.blind_tags.Small) then
+                    tag_to_spawn = G.GAME.round_resets.blind_tags.Big or G.GAME.round_resets.blind_tags.Small
+                else
+                    tag_to_spawn = get_next_tag_key('dna_tag')
+                end
+
+                self:yep('+', G.C.PURPLE, function()
+                    if tag_to_spawn then
+                        add_tag(Tag(tag_to_spawn))
+                    end
+                    return true
+                end)
+            end
+        end
+    end
+    return tab, sprite
+end
