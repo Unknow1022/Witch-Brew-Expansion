@@ -3021,10 +3021,62 @@ function create_witch_brew_title_label()
     }
 end
 
+local function get_or_load_title_image()
+    if G.WITCH_BREW_TITLE_IMAGE then return G.WITCH_BREW_TITLE_IMAGE end
+    if G.ASSET_ATLAS then
+        for k, v in pairs(G.ASSET_ATLAS) do
+            if string.find(string.lower(k), "title") and v.image then
+                G.WITCH_BREW_TITLE_IMAGE = v.image
+                return v.image
+            end
+        end
+    end
+    local nfs = NFS or (SMODS and SMODS.NFS)
+    if nfs then
+        local raw_path = (Witch_brew_MOD and Witch_brew_MOD.path) or (SMODS and SMODS.current_mod and SMODS.current_mod.path) or "Mods/Witcher Brew Expansion/"
+        local mod_path = (string.sub(raw_path, -1) == '/' or string.sub(raw_path, -1) == '\\') and raw_path or (raw_path .. '/')
+        local scale = (G.SETTINGS and G.SETTINGS.GRAPHICS and G.SETTINGS.GRAPHICS.texture_scaling) or 1
+        local candidates = {
+            mod_path .. "assets/" .. scale .. "x/title.png",
+            mod_path .. "assets/1x/title.png",
+            mod_path .. "assets/2x/title.png"
+        }
+        for _, rel_path in ipairs(candidates) do
+            local full_path = nfs.getNormalizedPath(rel_path)
+            if nfs.getInfo(full_path) then
+                local file_data = nfs.newFileData(full_path)
+                if file_data then
+                    local img_data = love.image.newImageData(file_data)
+                    G.WITCH_BREW_TITLE_IMAGE = love.graphics.newImage(img_data, { mipmaps = true, dpiscale = scale })
+                    return G.WITCH_BREW_TITLE_IMAGE
+                end
+            end
+        end
+    end
+    return nil
+end
+
+function apply_witch_brew_title_asset()
+    local title_img = get_or_load_title_image()
+    if not title_img then return end
+
+    if G.ASSET_ATLAS and G.ASSET_ATLAS["balatro"] then
+        G.ASSET_ATLAS["balatro"].image = title_img
+    end
+
+    if G.SPLASH_LOGO and G.SPLASH_LOGO.atlas and G.SPLASH_LOGO.atlas.image ~= title_img then
+        G.SPLASH_LOGO.atlas.image = title_img
+        G.SPLASH_LOGO:set_sprite_pos({x = 0, y = 0})
+    end
+end
+
 if Game and Game.update then
     local orig_game_update = Game.update
     function Game:update(dt)
         orig_game_update(self, dt)
+        if G.STAGE == G.STAGES.MAIN_MENU and G.SPLASH_LOGO then
+            apply_witch_brew_title_asset()
+        end
         if G.WITCH_BREW_TITLE_LABEL and (not G.STAGE or G.STAGE ~= G.STAGES.MAIN_MENU) then
             G.WITCH_BREW_TITLE_LABEL:remove()
             G.WITCH_BREW_TITLE_LABEL = nil
@@ -3039,22 +3091,6 @@ SMODS.Atlas {
     px = 333,
     py = 216
 }
-
-function apply_witch_brew_title_asset()
-    local title_atlas = (G.ASSET_ATLAS and (G.ASSET_ATLAS['witch_brew_title'] or G.ASSET_ATLAS['Witch_brew_title']))
-        or (SMODS and SMODS.Atlases and (SMODS.Atlases['witch_brew_title'] or SMODS.Atlases['Witch_brew_title']))
-    if not title_atlas then return end
-    if G.ASSET_ATLAS then
-        if G.ASSET_ATLAS["balatro"] and title_atlas.image then
-            G.ASSET_ATLAS["balatro"].image = title_atlas.image
-        end
-        G.ASSET_ATLAS["balatro"] = title_atlas
-    end
-    if G.SPLASH_LOGO then
-        G.SPLASH_LOGO.atlas = title_atlas
-        G.SPLASH_LOGO:set_sprite_pos({x = 0, y = 0})
-    end
-end
 
 if Game and Game.main_menu then
     local orig_game_main_menu = Game.main_menu
