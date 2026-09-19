@@ -260,92 +260,98 @@ SMODS.Back {
         G.E_MANAGER:add_event(Event({
             func = function()
                 local is_combo = G.GAME and (G.GAME.friendly_sleeve_combo or is_sleeve_matching("friendly"))
-                if is_combo then
-                    -- Friendly Deck + Friendly Sleeve Fusion
-                    if G.jokers and G.jokers.config then
-                        G.jokers.config.card_limit = math.max(1, G.jokers.config.card_limit - 2)
-                    end
-                    if G.GAME and G.GAME.starting_params and G.GAME.starting_params.joker_slots then
-                        G.GAME.starting_params.joker_slots = math.max(1, G.GAME.starting_params.joker_slots - 2)
-                    end
+                local num_jokers = is_combo and 3 or 2
+                local slot_penalty = is_combo and 2 or 1
 
-                    G.GAME.round_resets.discards = math.max(0, G.GAME.round_resets.discards - 1)
-                    ease_discard(-1)
+                if G.jokers and G.jokers.config then
+                    G.jokers.config.card_limit = math.max(1, G.jokers.config.card_limit - slot_penalty)
+                end
+                if G.GAME and G.GAME.starting_params and G.GAME.starting_params.joker_slots then
+                    G.GAME.starting_params.joker_slots = math.max(1, G.GAME.starting_params.joker_slots - slot_penalty)
+                end
 
-                    play_sound('foil1')
-                    local legendary_spawned = false
-                    for i = 1, 3 do
-                        local new_joker = nil
-                        local attempts = 0
-                        repeat
-                            attempts = attempts + 1
-                            if not legendary_spawned and not new_joker and pseudorandom('friendly_legendary_roll_' .. i .. '_' .. attempts) < 0.35 then
-                                new_joker = create_card('Joker', G.jokers, true, 4, nil, false, nil, 'friendly_legendary')
-                                if new_joker and not is_invalid_eternal_joker(new_joker) then
-                                    legendary_spawned = true
-                                elseif new_joker then
-                                    if new_joker.area then new_joker.area:remove_card(new_joker) end
-                                    new_joker:remove()
-                                    new_joker = nil
+                G.GAME.round_resets.discards = math.max(0, G.GAME.round_resets.discards - 1)
+                ease_discard(-1)
+
+                play_sound('foil1')
+                for i = 1, num_jokers do
+                    local new_joker = nil
+                    local attempts = 0
+                    repeat
+                        attempts = attempts + 1
+                        local roll = pseudorandom('friendly_roll_' .. i .. '_' .. attempts)
+                        local roll_type = 'common'
+
+                        if is_combo and roll < 0.01 then -- 1 en 100 de ser secreto
+                            roll_type = 'secret'
+                        elseif is_combo and roll < 0.06 then -- 1 en 20 de ser legendario (0.01 + 0.05)
+                            roll_type = 'legendary'
+                        elseif is_combo and roll < 0.185 then -- 1 en 8 de ser raro (0.06 + 0.125)
+                            roll_type = 'rare'
+                        elseif is_combo and roll < 0.435 then -- 1 en 4 de ser poco comun (0.185 + 0.25)
+                            roll_type = 'uncommon'
+                        elseif not is_combo and roll < 0.125 then -- 1 en 8 de ser raro
+                            roll_type = 'rare'
+                        elseif not is_combo and roll < 0.375 then -- 1 en 4 de ser poco comun (0.125 + 0.25)
+                            roll_type = 'uncommon'
+                        else -- 1 en 2 de ser comun (resto)
+                            roll_type = 'common'
+                        end
+
+                        if roll_type == 'secret' then
+                            local secret_keys = {
+                                'esteban', 'thiago', 'black_hole_joker',
+                                'squele', 'bluxdir', 'charles', 'mochi',
+                                'helin', 'raytracing', 'paco', 'yairo',
+                                'kyra'
+                            }
+                            local valid_secrets = {}
+                            for _, sk in ipairs(secret_keys) do
+                                local k = 'j_Witch_brew_' .. sk
+                                if G.P_CENTERS and G.P_CENTERS[k] then
+                                    table.insert(valid_secrets, k)
                                 end
                             end
-                            if not new_joker then
-                                local rarity_roll = pseudorandom('friendly_rarity_' .. i .. '_' .. attempts)
-                                local rarity = (rarity_roll > 0.95 and 3) or (rarity_roll > 0.70 and 2) or 1
-                                new_joker = create_card('Joker', G.jokers, false, rarity, nil, false, nil, 'friendly_deck_combo')
+                            if #valid_secrets == 0 and G.P_CENTERS then
+                                for pk, pv in pairs(G.P_CENTERS) do
+                                    if pv.set == 'Joker' and (pv.is_secret or pv.rarity == 'Secret') then
+                                        table.insert(valid_secrets, pk)
+                                    end
+                                end
                             end
-                            if new_joker and is_invalid_eternal_joker(new_joker) then
-                                if new_joker.area then new_joker.area:remove_card(new_joker) end
-                                new_joker:remove()
-                                new_joker = nil
+                            local chosen_secret = (#valid_secrets > 0) and pseudorandom_element(valid_secrets, pseudoseed('friendly_secret_' .. i .. '_' .. attempts)) or nil
+                            if chosen_secret then
+                                new_joker = create_card('Joker', G.jokers, nil, nil, nil, nil, chosen_secret, 'friendly_secret')
+                            else
+                                new_joker = create_card('Joker', G.jokers, true, 4, nil, false, nil, 'friendly_legendary')
                             end
-                        until new_joker or attempts >= 20
-                        if not new_joker then
-                            new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_fallback')
+                        elseif roll_type == 'legendary' then
+                            new_joker = create_card('Joker', G.jokers, true, 4, nil, false, nil, 'friendly_legendary')
+                        elseif roll_type == 'rare' then
+                            new_joker = create_card('Joker', G.jokers, false, 3, nil, false, nil, 'friendly_rare')
+                        elseif roll_type == 'uncommon' then
+                            new_joker = create_card('Joker', G.jokers, false, 2, nil, false, nil, 'friendly_uncommon')
+                        else
+                            new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_common')
                         end
-                        new_joker:set_eternal(true)
-                        if new_joker.ability then new_joker.ability.eternal = true end
-                        new_joker:set_edition({ negative = true }, true)
-                        new_joker:add_to_deck()
-                        G.jokers:emplace(new_joker)
-                        new_joker:juice_up(0.5, 0.5)
-                    end
-                else
-                    if G.jokers and G.jokers.config then
-                        G.jokers.config.card_limit = math.max(1, G.jokers.config.card_limit - 1)
-                    end
-                    if G.GAME and G.GAME.starting_params and G.GAME.starting_params.joker_slots then
-                        G.GAME.starting_params.joker_slots = math.max(1, G.GAME.starting_params.joker_slots - 1)
+
+                        if new_joker and roll_type ~= 'secret' and is_invalid_eternal_joker(new_joker) then
+                            if new_joker.area then new_joker.area:remove_card(new_joker) end
+                            new_joker:remove()
+                            new_joker = nil
+                        end
+                    until new_joker or attempts >= 20
+
+                    if not new_joker then
+                        new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_fallback')
                     end
 
-                    G.GAME.round_resets.discards = math.max(0, G.GAME.round_resets.discards - 1)
-                    ease_discard(-1)
-
-                    play_sound('foil1')
-                    for i = 1, 2 do
-                        local new_joker = nil
-                        local attempts = 0
-                        repeat
-                            attempts = attempts + 1
-                            local rarity_roll = pseudorandom('friendly_rarity_' .. i .. '_' .. attempts)
-                            local rarity = (rarity_roll > 0.95 and 3) or (rarity_roll > 0.70 and 2) or 1
-                            new_joker = create_card('Joker', G.jokers, false, rarity, nil, false, nil, 'friendly_deck')
-                            if new_joker and is_invalid_eternal_joker(new_joker) then
-                                if new_joker.area then new_joker.area:remove_card(new_joker) end
-                                new_joker:remove()
-                                new_joker = nil
-                            end
-                        until new_joker or attempts >= 20
-                        if not new_joker then
-                            new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_deck_fallback')
-                        end
-                        new_joker:set_eternal(true)
-                        if new_joker.ability then new_joker.ability.eternal = true end
-                        new_joker:set_edition({ negative = true }, true)
-                        new_joker:add_to_deck()
-                        G.jokers:emplace(new_joker)
-                        new_joker:juice_up(0.5, 0.5)
-                    end
+                    new_joker:set_eternal(true)
+                    if new_joker.ability then new_joker.ability.eternal = true end
+                    new_joker:set_edition({ negative = true }, true)
+                    new_joker:add_to_deck()
+                    G.jokers:emplace(new_joker)
+                    new_joker:juice_up(0.5, 0.5)
                 end
                 return true
             end
@@ -365,14 +371,11 @@ SMODS.Back {
     loc_txt = {
         name = 'Alchemist Deck',
         text = {
-            "Start with {C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{} voucher"
+            "Start run with the voucher",
+            "{C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{}"
         }
     },
     loc_vars = function(self, info_queue)
-        local v_key = (G.P_CENTERS and G.P_CENTERS.v_Witch_brew_destilacion_recurrente and 'v_Witch_brew_destilacion_recurrente') or 'v_destilacion_recurrente'
-        if info_queue and G.P_CENTERS and G.P_CENTERS[v_key] then
-            table.insert(info_queue, G.P_CENTERS[v_key])
-        end
         return { vars = {} }
     end,
     apply = function(self)
@@ -504,9 +507,11 @@ function inject_witch_brew_deck_localization()
         alchemist = {
             name = is_es and "Baraja Alquimista" or "Alchemist Deck",
             text = is_es and {
-                "Inicia con el vale {C:attention,T:v_Witch_brew_destilacion_recurrente}Destilación Recurrente{}"
+                "Inicia la partida con el vale",
+                "{C:attention,T:v_Witch_brew_destilacion_recurrente}Destilación Recurrente{}"
             } or {
-                "Start with {C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{} voucher"
+                "Start run with the voucher",
+                "{C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{}"
             }
         }
     }
@@ -565,7 +570,49 @@ if Back then
             if self and self.effect and not self.effect.config then
                 self.effect.config = {}
             end
-            return orig_back_generate_ui(self, other, ui_scale, min_dims, challenge)
+            local ui = orig_back_generate_ui(self, other, ui_scale, min_dims, challenge)
+            local name_to_check = other and other.name or self.name
+            if ui and ui.nodes and name_to_check ~= 'Challenge Deck' then
+                local rows = 0
+                local function scan_rows(node)
+                    if not node or type(node) ~= 'table' then return end
+                    if node.n == G.UIT.R and node.nodes then
+                        for _, c in ipairs(node.nodes) do
+                            if c.n == G.UIT.T or (c.n == G.UIT.O and c.config and c.config.object) then
+                                rows = rows + 1
+                                return
+                            end
+                        end
+                    end
+                    if node.nodes then
+                        for _, c in ipairs(node.nodes) do scan_rows(c) end
+                    end
+                end
+                scan_rows(ui)
+
+                local mult = (rows <= 1 and 1.30)
+                    or (rows <= 2 and 1.25)
+                    or (rows <= 3 and 1.20)
+                    or 1.15
+
+                local function enlarge(node)
+                    if not node or type(node) ~= 'table' then return end
+                    if node.config and node.config.scale then
+                        node.config.scale = node.config.scale * mult
+                    end
+                    if node.config and node.config.object and node.config.object.scale then
+                        node.config.object.scale = node.config.object.scale * mult
+                        if node.config.object.update_text then
+                            node.config.object:update_text(true)
+                        end
+                    end
+                    if node.nodes then
+                        for _, c in ipairs(node.nodes) do enlarge(c) end
+                    end
+                end
+                enlarge(ui)
+            end
+            return ui
         end
     end
 end

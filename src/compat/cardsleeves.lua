@@ -115,12 +115,12 @@ local function inject_sleeve_localization()
             text = is_es and {
                 "{C:attention}Fusión Amistosa{}:",
                 "Genera {C:attention}3{} Jokers {C:dark_edition}Negativos{} {C:attention}Eternos{},",
-                "{C:inactive}(Cualq. rareza, máx. 1 Legendario, sin comodines de venta){},",
+                "{C:inactive}(Cualq. rareza, chance de Legendario y Secreto){},",
                 "{C:red}-2{} Ranuras de Joker, {C:red}-1{} Descarte"
             } or {
                 "{C:attention}Friendly Fusion{}:",
                 "Spawns {C:attention}3{} {C:dark_edition}Negative{} {C:attention}Eternal Jokers{},",
-                "{C:inactive}(Any rarity, max 1 Legendary, no sell/destroy Jokers){},",
+                "{C:inactive}(Any rarity, chance of Legendary or Secret){},",
                 "{C:red}-2{} Joker Slots, {C:red}-1{} Discard"
             }
         },
