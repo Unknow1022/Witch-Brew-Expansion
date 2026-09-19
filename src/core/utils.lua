@@ -3032,11 +3032,29 @@ if Game and Game.update then
     end
 end
 
+-- Custom Title Atlas (Witcher Brew - Purple & Green Title)
+SMODS.Atlas {
+    key = "witch_brew_title",
+    path = "title.png",
+    px = 333,
+    py = 216
+}
+
+function apply_witch_brew_title_asset()
+    local title_atlas = (G.ASSET_ATLAS and (G.ASSET_ATLAS['Witch_brew_title'] or G.ASSET_ATLAS['witch_brew_title']))
+        or (SMODS and SMODS.Atlases and (SMODS.Atlases['Witch_brew_title'] or SMODS.Atlases['witch_brew_title']))
+    if not title_atlas then return end
+    if G.SPLASH_LOGO then
+        G.SPLASH_LOGO.atlas = title_atlas
+    end
+end
+
 if set_main_menu_UI then
     local orig_set_main_menu_UI = set_main_menu_UI
     function set_main_menu_UI()
         orig_set_main_menu_UI()
         apply_witch_brew_menu_bg()
+        apply_witch_brew_title_asset()
         spawn_main_menu_secret_joker()
         create_witch_brew_title_label()
     end
@@ -3044,6 +3062,7 @@ end
 
 if G and G.STAGE == G.STAGES.MAIN_MENU then
     apply_witch_brew_menu_bg()
+    apply_witch_brew_title_asset()
     spawn_main_menu_secret_joker()
     create_witch_brew_title_label()
 end

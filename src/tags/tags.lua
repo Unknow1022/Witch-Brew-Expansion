@@ -234,7 +234,7 @@ SMODS.Tag {
     loc_txt = {
         name = 'Bounty Tag',
         text = {
-            "Gives {C:money}$20{} if you defeat",
+            "Gives {C:money}$10{} if you defeat",
             "the next Blind in {C:attention}1 hand{}"
         }
     },
@@ -243,7 +243,7 @@ SMODS.Tag {
             if G.GAME and G.GAME.current_round and G.GAME.current_round.hands_played == 1 then
                 tag.triggered = true
                 return {
-                    dollars = 20,
+                    dollars = 10,
                     condition = '1 Hand',
                     pos = tag.pos,
                     tag = tag

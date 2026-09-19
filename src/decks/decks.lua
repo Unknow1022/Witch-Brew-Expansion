@@ -365,14 +365,13 @@ SMODS.Back {
     loc_txt = {
         name = 'Alchemist Deck',
         text = {
-            "Start with {C:attention}Recurring Distillation{} voucher,",
-            "ensuring {C:attention}15% chance{} to recreate consumables.",
-            "Gains voucher again at start of each round."
+            "Start with {C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{} voucher"
         }
     },
     loc_vars = function(self, info_queue)
-        if info_queue and G.P_CENTERS and G.P_CENTERS.v_Witch_brew_destilacion_recurrente then
-            table.insert(info_queue, G.P_CENTERS.v_Witch_brew_destilacion_recurrente)
+        local v_key = (G.P_CENTERS and G.P_CENTERS.v_Witch_brew_destilacion_recurrente and 'v_Witch_brew_destilacion_recurrente') or 'v_destilacion_recurrente'
+        if info_queue and G.P_CENTERS and G.P_CENTERS[v_key] then
+            table.insert(info_queue, G.P_CENTERS[v_key])
         end
         return { vars = {} }
     end,
@@ -505,13 +504,9 @@ function inject_witch_brew_deck_localization()
         alchemist = {
             name = is_es and "Baraja Alquimista" or "Alchemist Deck",
             text = is_es and {
-                "Inicia con el vale {C:attention}Destilación Recurrente{},",
-                "asegurando {C:attention}15% de probabilidad{} de recrear consumibles.",
-                "Obtiene el vale nuevamente al iniciar cada ronda."
+                "Inicia con el vale {C:attention,T:v_Witch_brew_destilacion_recurrente}Destilación Recurrente{}"
             } or {
-                "Start with {C:attention}Recurring Distillation{} voucher,",
-                "ensuring {C:attention}15% chance{} to recreate consumables.",
-                "Gains voucher again at start of each round."
+                "Start with {C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{} voucher"
             }
         }
     }
