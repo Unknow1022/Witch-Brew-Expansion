@@ -143,12 +143,14 @@ local function inject_sleeve_localization()
             text = is_es and {
                 "{C:attention}Fusión Prehistórica{}:",
                 "Inicia solo con {C:attention}Ases, 2s y 3s{} (4 de c/u),",
-                "Las demás cartas iniciales son {C:attention}Cartas de Piedra{} con {C:chips}Sello de Plata{},",
+                "Las demás cartas iniciales son {C:attention}Cartas de Piedra{},",
+                "Las Cartas de Piedra otorgan {C:mult}+1{} Mult al puntuar,",
                 "{C:blue}+1{} Mano"
             } or {
                 "{C:attention}Prehistoric Fusion{}:",
                 "Start with only {C:attention}Aces, 2s, and 3s{} (4 of each),",
-                "All other starting cards become {C:attention}Stone Cards{} with {C:chips}Silver Seal{},",
+                "All other starting cards become {C:attention}Stone Cards{},",
+                "Stone Cards give {C:mult}+1{} Mult when scored,",
                 "{C:blue}+1{} Hand"
             }
         },
@@ -388,23 +390,6 @@ function register_witch_brew_sleeves()
                 -- Offset -1 Hand penalty from Caveman Deck
                 G.GAME.round_resets.hands = G.GAME.round_resets.hands + 1
                 ease_hands_played(1)
-
-                G.E_MANAGER:add_event(Event({
-                    trigger = 'after',
-                    delay = 0.4,
-                    func = function()
-                        if G.playing_cards then
-                            local silver_seal_key = (G.P_SEALS and G.P_SEALS['Witch_brew_silver'] and 'Witch_brew_silver') or 'silver'
-                            for _, card in ipairs(G.playing_cards) do
-                                if card.ability and (card.ability.name == 'Stone Card' or card.ability.effect == 'Stone Card') then
-                                    card:set_seal(silver_seal_key, nil, true)
-                                    card:juice_up(0.2, 0.2)
-                                end
-                            end
-                        end
-                        return true
-                    end
-                }))
             else
                 -- Standalone Caveman Sleeve: face cards become stone cards, +1 hand
                 G.GAME.round_resets.hands = G.GAME.round_resets.hands + 1
@@ -432,8 +417,7 @@ function register_witch_brew_sleeves()
                 if context.cardarea == G.play and context.individual and context.other_card then
                     if context.other_card.ability and (context.other_card.ability.name == 'Stone Card' or context.other_card.ability.effect == 'Stone Card') then
                         return {
-                            mult = 3,
-                            chips = 20,
+                            mult = 1,
                             card = context.other_card
                         }
                     end

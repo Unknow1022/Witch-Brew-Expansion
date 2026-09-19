@@ -78,14 +78,10 @@ SMODS.Back {
                 if G.playing_cards then
                     local keep_ranks = is_combo and { ['Ace'] = true, ['2'] = true, ['3'] = true }
                         or { ['Ace'] = true, ['2'] = true, ['3'] = true, ['4'] = true, ['6'] = true, ['8'] = true }
-                    local silver_seal_key = (G.P_SEALS and G.P_SEALS['Witch_brew_silver'] and 'Witch_brew_silver') or 'silver'
                     for _, card in ipairs(G.playing_cards) do
                         local val = card.base and card.base.value
                         if not keep_ranks[val] then
                             card:set_ability(G.P_CENTERS.m_stone)
-                            if is_combo then
-                                card:set_seal(silver_seal_key, nil, true)
-                            end
                         end
                     end
                 end
