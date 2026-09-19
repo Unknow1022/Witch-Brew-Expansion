@@ -142,13 +142,13 @@ local function inject_sleeve_localization()
             name = is_es and "Funda Cavernícola (Fusión)" or "Caveman Sleeve (Fusion)",
             text = is_es and {
                 "{C:attention}Fusión Prehistórica{}:",
-                "{C:attention}Cartas de Piedra{} iniciales reciben {C:chips}Sello de Plata{},",
-                "Otorgan {C:mult}+3{} Mult y {C:chips}+20{} Fichas al anotar,",
+                "Inicia solo con {C:attention}Ases, 2s y 3s{} (4 de c/u),",
+                "Las demás cartas iniciales son {C:attention}Cartas de Piedra{} con {C:chips}Sello de Plata{},",
                 "{C:blue}+1{} Mano"
             } or {
                 "{C:attention}Prehistoric Fusion{}:",
-                "All starting {C:attention}Stone Cards{} get a {C:chips}Silver Seal{},",
-                "{C:attention}Stone Cards{} give {C:mult}+3{} Mult and {C:chips}+20{} Chips when scored,",
+                "Start with only {C:attention}Aces, 2s, and 3s{} (4 of each),",
+                "All other starting cards become {C:attention}Stone Cards{} with {C:chips}Silver Seal{},",
                 "{C:blue}+1{} Hand"
             }
         },
@@ -330,8 +330,8 @@ function register_witch_brew_sleeves()
                         repeat
                             attempts = attempts + 1
                             local rarity_roll = pseudorandom('friendly_sleeve_rarity_' .. attempts)
-                            local rarity = (rarity_roll > 0.95 and 3) or (rarity_roll > 0.70 and 2) or 1
-                            new_joker = create_card('Joker', G.jokers, false, rarity, nil, false, nil, 'friendly_sleeve')
+                            local rarity_float = (rarity_roll > 0.95 and 0.99) or (rarity_roll > 0.70 and 0.8) or 0.5
+                            new_joker = create_card('Joker', G.jokers, false, rarity_float, nil, false, nil, 'friendly_sleeve')
                             if new_joker and is_invalid_eternal_joker(new_joker) then
                                 if new_joker.area then new_joker.area:remove_card(new_joker) end
                                 new_joker:remove()
@@ -339,7 +339,7 @@ function register_witch_brew_sleeves()
                             end
                         until new_joker or attempts >= 20
                         if not new_joker then
-                            new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_sleeve_fallback')
+                            new_joker = create_card('Joker', G.jokers, false, 0.5, nil, false, nil, 'friendly_sleeve_fallback')
                         end
                         new_joker:set_eternal(true)
                         if new_joker.ability then new_joker.ability.eternal = true end

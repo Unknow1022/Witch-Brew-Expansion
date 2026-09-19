@@ -63,9 +63,21 @@ SMODS.Back {
     apply = function(self)
         G.E_MANAGER:add_event(Event({
             func = function()
-                local is_combo = G.GAME and (G.GAME.cavernicola_sleeve_combo or is_sleeve_matching("cavernicola"))
+                local is_combo = false
+                if CardSleeves and G.GAME then
+                    if G.GAME.cavernicola_sleeve_combo then
+                        is_combo = true
+                    elseif G.GAME.selected_sleeve then
+                        local s = tostring(G.GAME.selected_sleeve.key or G.GAME.selected_sleeve.name or G.GAME.selected_sleeve)
+                        if string.find(string.lower(s), "cavernicola", 1, true) ~= nil then
+                            is_combo = true
+                        end
+                    end
+                end
+
                 if G.playing_cards then
-                    local keep_ranks = { ['Ace'] = true, ['2'] = true, ['3'] = true, ['4'] = true, ['6'] = true, ['8'] = true }
+                    local keep_ranks = is_combo and { ['Ace'] = true, ['2'] = true, ['3'] = true }
+                        or { ['Ace'] = true, ['2'] = true, ['3'] = true, ['4'] = true, ['6'] = true, ['8'] = true }
                     local silver_seal_key = (G.P_SEALS and G.P_SEALS['Witch_brew_silver'] and 'Witch_brew_silver') or 'silver'
                     for _, card in ipairs(G.playing_cards) do
                         local val = card.base and card.base.value
@@ -259,7 +271,18 @@ SMODS.Back {
     apply = function(self)
         G.E_MANAGER:add_event(Event({
             func = function()
-                local is_combo = G.GAME and (G.GAME.friendly_sleeve_combo or is_sleeve_matching("friendly"))
+                local is_combo = false
+                if CardSleeves and G.GAME then
+                    if G.GAME.friendly_sleeve_combo then
+                        is_combo = true
+                    elseif G.GAME.selected_sleeve then
+                        local s = tostring(G.GAME.selected_sleeve.key or G.GAME.selected_sleeve.name or G.GAME.selected_sleeve)
+                        if string.find(string.lower(s), "friendly", 1, true) ~= nil then
+                            is_combo = true
+                        end
+                    end
+                end
+
                 local num_jokers = is_combo and 3 or 2
                 local slot_penalty = is_combo and 2 or 1
 
@@ -282,20 +305,26 @@ SMODS.Back {
                         local roll = pseudorandom('friendly_roll_' .. i .. '_' .. attempts)
                         local roll_type = 'common'
 
-                        if is_combo and roll < 0.01 then -- 1 en 100 de ser secreto
-                            roll_type = 'secret'
-                        elseif is_combo and roll < 0.06 then -- 1 en 20 de ser legendario (0.01 + 0.05)
-                            roll_type = 'legendary'
-                        elseif is_combo and roll < 0.185 then -- 1 en 8 de ser raro (0.06 + 0.125)
-                            roll_type = 'rare'
-                        elseif is_combo and roll < 0.435 then -- 1 en 4 de ser poco comun (0.185 + 0.25)
-                            roll_type = 'uncommon'
-                        elseif not is_combo and roll < 0.125 then -- 1 en 8 de ser raro
-                            roll_type = 'rare'
-                        elseif not is_combo and roll < 0.375 then -- 1 en 4 de ser poco comun (0.125 + 0.25)
-                            roll_type = 'uncommon'
-                        else -- 1 en 2 de ser comun (resto)
-                            roll_type = 'common'
+                        if is_combo then
+                            if roll < 0.01 then -- 1 en 100 de ser secreto
+                                roll_type = 'secret'
+                            elseif roll < 0.06 then -- 1 en 20 de ser legendario (0.01 + 0.05)
+                                roll_type = 'legendary'
+                            elseif roll < 0.185 then -- 1 en 8 de ser raro (0.06 + 0.125)
+                                roll_type = 'rare'
+                            elseif roll < 0.435 then -- 1 en 4 de ser poco comun (0.185 + 0.25)
+                                roll_type = 'uncommon'
+                            else -- 1 en 2 de ser comun (resto)
+                                roll_type = 'common'
+                            end
+                        else
+                            if roll < 0.125 then -- 1 en 8 de ser raro
+                                roll_type = 'rare'
+                            elseif roll < 0.375 then -- 1 en 4 de ser poco comun (0.125 + 0.25)
+                                roll_type = 'uncommon'
+                            else -- 1 en 2 de ser comun (resto)
+                                roll_type = 'common'
+                            end
                         end
 
                         if roll_type == 'secret' then
@@ -323,16 +352,16 @@ SMODS.Back {
                             if chosen_secret then
                                 new_joker = create_card('Joker', G.jokers, nil, nil, nil, nil, chosen_secret, 'friendly_secret')
                             else
-                                new_joker = create_card('Joker', G.jokers, true, 4, nil, false, nil, 'friendly_legendary')
+                                new_joker = create_card('Joker', G.jokers, true, nil, nil, false, nil, 'friendly_legendary')
                             end
                         elseif roll_type == 'legendary' then
-                            new_joker = create_card('Joker', G.jokers, true, 4, nil, false, nil, 'friendly_legendary')
+                            new_joker = create_card('Joker', G.jokers, true, nil, nil, false, nil, 'friendly_legendary')
                         elseif roll_type == 'rare' then
-                            new_joker = create_card('Joker', G.jokers, false, 3, nil, false, nil, 'friendly_rare')
+                            new_joker = create_card('Joker', G.jokers, false, 0.99, nil, false, nil, 'friendly_rare')
                         elseif roll_type == 'uncommon' then
-                            new_joker = create_card('Joker', G.jokers, false, 2, nil, false, nil, 'friendly_uncommon')
-                        else
-                            new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_common')
+                            new_joker = create_card('Joker', G.jokers, false, 0.8, nil, false, nil, 'friendly_uncommon')
+                        else -- common
+                            new_joker = create_card('Joker', G.jokers, false, 0.5, nil, false, nil, 'friendly_common')
                         end
 
                         if new_joker and roll_type ~= 'secret' and is_invalid_eternal_joker(new_joker) then
@@ -343,7 +372,7 @@ SMODS.Back {
                     until new_joker or attempts >= 20
 
                     if not new_joker then
-                        new_joker = create_card('Joker', G.jokers, false, 1, nil, false, nil, 'friendly_fallback')
+                        new_joker = create_card('Joker', G.jokers, false, 0.5, nil, false, nil, 'friendly_fallback')
                     end
 
                     new_joker:set_eternal(true)
