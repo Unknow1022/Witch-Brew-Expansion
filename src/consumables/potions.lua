@@ -25,6 +25,125 @@ SMODS.ConsumableType {
     default = 'c_Witch_brew_potion_estiramiento'
 }
 
+-- ==========================================
+-- POTION PARTICLE EFFECTS & PARTICLES HOOKS
+-- ==========================================
+
+local function get_potion_particle_colours(card)
+    local key = (card and card.config and card.config.center and (card.config.center.key or card.config.center_key))
+        or (card and card.config and card.config.center_key)
+        or (card and card.ability and card.ability.name)
+        or ''
+    if string.find(key, 'amalgama', 1, true) then
+        return { HEX('a855f7'), HEX('ec4899'), HEX('3b82f6'), HEX('10b981'), HEX('fbbf24'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'rayo', 1, true) or string.find(key, 'trueno', 1, true) then
+        return { HEX('f59e0b'), HEX('fbbf24'), HEX('fef08a'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'ventisca', 1, true) or string.find(key, 'orca', 1, true) then
+        return { HEX('06b6d4'), HEX('38bdf8'), HEX('67e8f9'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'sangre_negra', 1, true) then
+        return { HEX('991b1b'), HEX('dc2626'), HEX('450a0a'), HEX('1f2937') }
+    elseif string.find(key, 'luna_llena', 1, true) or string.find(key, 'gato', 1, true) then
+        return { HEX('8b5cf6'), HEX('c084fc'), HEX('4ade80'), { 1, 1, 1, 0.9 } }
+    elseif string.find(key, 'miel_blanca', 1, true) then
+        return { HEX('fef08a'), HEX('fde047'), HEX('ffffff'), HEX('ca8a04') }
+    else
+        return { HEX('2e8b57'), HEX('50c878'), HEX('a7f3d0'), HEX('10b981'), HEX('34d399'), { 1, 1, 1, 0.9 } }
+    end
+end
+
+if SMODS and SMODS.DrawStep then
+    SMODS.DrawStep {
+        key = 'potion_particles',
+        order = -35,
+        func = function(self)
+            if self.children.potion_particles and self.children.potion_particles.draw then
+                if not self.dissolve or self.dissolve <= 0.01 then
+                    self.children.potion_particles:draw()
+                end
+            end
+        end,
+        conditions = { vortex = false, facing = 'front' }
+    }
+end
+
+local card_update_potion_ref = Card.update
+function Card:update(dt)
+    card_update_potion_ref(self, dt)
+    if self.ability and self.ability.set == 'Potion' then
+        local is_active = self.states.visible and self.facing ~= 'back' and not (self.dissolve and self.dissolve > 0) and not self.shattered and (not self.area or self.area ~= G.deck)
+        if is_active then
+            if not self.children.potion_particles and Particles then
+                local colours = get_potion_particle_colours(self)
+                local p = Particles(0, 0, 0, 0, {
+                    timer = 0.14,
+                    scale = 0.16,
+                    speed = 0.6,
+                    lifespan = 1.1,
+                    attach = self,
+                    colours = colours,
+                    fill = true,
+                    initialize = true
+                })
+                p.custom_draw = true
+                self.children.potion_particles = p
+            end
+        elseif self.children.potion_particles then
+            pcall(function() self.children.potion_particles:remove() end)
+            self.children.potion_particles = nil
+        end
+    elseif self.children.potion_particles then
+        pcall(function() self.children.potion_particles:remove() end)
+        self.children.potion_particles = nil
+    end
+end
+
+local card_use_potion_ref = Card.use_consumeable
+function Card:use_consumeable(area, copier)
+    if self.ability and self.ability.set == 'Potion' and Particles then
+        local colours = get_potion_particle_colours(self)
+        local burst = Particles(0, 0, 0, 0, {
+            timer = 0.008,
+            pulse_max = 24,
+            scale = 0.28,
+            speed = 2.5,
+            lifespan = 0.7,
+            attach = self,
+            colours = colours,
+            fill = true
+        })
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.7,
+            blockable = false,
+            blocking = false,
+            func = function()
+                if burst and burst.remove then
+                    pcall(function() burst:remove() end)
+                end
+                return true
+            end
+        }))
+    end
+    return card_use_potion_ref(self, area, copier)
+end
+
+local card_start_dissolve_potion_ref = Card.start_dissolve
+function Card:start_dissolve(dissolve_colours, silent, dissolve_time_fac, no_juice)
+    if self.ability and self.ability.set == 'Potion' and not dissolve_colours then
+        dissolve_colours = get_potion_particle_colours(self)
+    end
+    return card_start_dissolve_potion_ref(self, dissolve_colours, silent, dissolve_time_fac, no_juice)
+end
+
+local card_start_materialize_potion_ref = Card.start_materialize
+function Card:start_materialize(dissolve_colours, silent, timefac)
+    if self.ability and self.ability.set == 'Potion' and not dissolve_colours then
+        dissolve_colours = get_potion_particle_colours(self)
+    end
+    return card_start_materialize_potion_ref(self, dissolve_colours, silent, timefac)
+end
+
+
 -- 1. Stretch Potion
 SMODS.Consumable {
     key = 'potion_estiramiento',
