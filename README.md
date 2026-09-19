@@ -4,14 +4,14 @@
 
 ![Balatro Version](https://img.shields.io/badge/Balatro-v1.0.1o-orange?style=for-the-badge&logo=balatro)
 ![Steamodded](https://img.shields.io/badge/Steamodded-v1.0.0%2B-blue?style=for-the-badge)
-![Witch Brew Expansion Version](https://img.shields.io/badge/Version-v1.4.0-9932CC?style=for-the-badge)
+![Witch Brew Expansion Version](https://img.shields.io/badge/Version-v1.4.2-9932CC?style=for-the-badge)
 ![CardSleeves](https://img.shields.io/badge/CardSleeves-Compatible-ff69b4?style=for-the-badge)
 ![JokerDisplay](https://img.shields.io/badge/JokerDisplay-Compatible-2ea44f?style=for-the-badge)
 ![Malverk](https://img.shields.io/badge/Malverk-Compatible-800080?style=for-the-badge)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20Espa%C3%B1ol-lightgrey?style=for-the-badge)
 
 **A massive, feature-packed Balatro expansion built on the Steamodded (SMODS) framework.**  
-Introduces an exclusive Secret rarity, 57 uniquely synergized Jokers (including Musical & Amalgam Jokers), a dedicated **Potions & Brews** consumable system with persistent Pouch storage & Kyra's Simulation Lab, Job Cards and Employment Booster Packs, dynamic Boss Blinds with CRT ambient lighting, custom Decks and Card Sleeves with Deck-Fusion mechanics, innovative Seals with spectral breaks, 6 Vouchers, 12 Spectrals, Tags, 10 high-difficulty synergy Challenges, and in-game configuration settings.
+Introduces an exclusive Secret rarity, 57 uniquely synergized Jokers (including Musical & Amalgam Jokers), a dedicated **Potions & Brews** consumable system with persistent Pouch storage & Kyra's Simulation Lab, Job Cards and Employment Booster Packs, dynamic Boss Blinds with CRT ambient lighting, custom Decks and Card Sleeves with Deck-Fusion mechanics, innovative Seals with spectral breaks, 6 Vouchers, 12 Spectrals, 11 Tags, 10 high-difficulty synergy Challenges, and in-game configuration settings.
 
 > 💬 **Mod Philosophy**:  
 > *"This mod is designed not to be unfair, but not to hand out free wins either; it is focused on long runs and fun Jokers to play. Reading is recommended, and if you don't like to read, well too bad XD!"*  
@@ -41,8 +41,41 @@ Introduces an exclusive Secret rarity, 57 uniquely synergized Jokers (including 
 | 🏆 **Synergy Challenges** | **10** | High-difficulty challenges based on complex Joker synergies and mod mechanics. |
 | ⚙️ **In-Game Settings** | **5** | *New Runs*, *New Challenges*, *New Spectrals & Jobs*, *New Boss Blinds*, and *Fast Animations*. |
 | 🎫 **Shop Vouchers** | **6** | *Taster*, *Critic*, *Embrujo*, *Caldero*, *Recurring Distillation*, and *Infinite Distillation*. |
-| 🏷️ **Skip Tags** | **3** | Discord Tag, Witchcraft Tag, and Sale Tag. |
+| 🏷️ **Skip Tags** | **11** | Discord Tag, Witchcraft Tag, Sale Tag, Brew Tag, Mutagen Tag, Silver Tag, Bounty Tag, Amalgam Tag, Dark Alchemy Tag, Contractor Tag, and DNA Tag. |
 | 📈 **Total Jokers** | **57** | All with custom sprites, localization support, and **JokerDisplay** compatibility. |
+
+---
+
+## 🧪 What's New: Dynamic Potion FX, Expanded Tags & Polish Update (v1.4.2)
+
+* 🧪 **Dynamic Potion Particle System & Ambient Effects**:
+  * **Continuous Element Particles**: All Potions in your consumable area, shop, and packs now emanate continuous floating particle auras tailored to their alchemical theme:
+    * **Amalgam Potion**: Iridescent rainbow spectrum (`HEX('a855f7')`, `HEX('ec4899')`, `HEX('3b82f6')`, `HEX('10b981')`, `HEX('fbbf24')`).
+    * **Lightning / Thunder Potions**: Electric golden sparks (`HEX('f59e0b')`, `HEX('fbbf24')`, `HEX('fef08a')`).
+    * **Blizzard / Orca Potions**: Frosty cyan and ice crystals (`HEX('06b6d4')`, `HEX('38bdf8')`, `HEX('67e8f9')`).
+    * **Black Blood**: Deep crimson & dark void smoke (`HEX('991b1b')`, `HEX('dc2626')`, `HEX('450a0a')`, `HEX('1f2937')`).
+    * **Full Moon / Cat**: Mystical violet & jade green glow (`HEX('8b5cf6')`, `HEX('c084fc')`, `HEX('4ade80')`).
+    * **White Honey**: Golden nectar & pure luminescence (`HEX('fef08a')`, `HEX('fde047')`, `HEX('ca8a04')`).
+    * **Standard Potions**: Emerald alchemical vapor (`HEX('2e8b57')`, `HEX('50c878')`, `HEX('10b981')`).
+  * **Explosive Burst on Consume**: Drinking or using any potion triggers a rich radial particle burst with custom velocity and lifespan.
+  * **Custom Dissolve & Materialize Tint**: Dynamic fade-in/fade-out colors inherit each potion's signature palette during generation and consumption.
+* 🏷️ **Massive Skip Tags Expansion (8 New Tags, 11 Total)**:
+  * 🧬 **DNA Tag (`dna`)**: **Interactive Clickable HUD Tag!** Click directly on the tag on your screen at any moment during the run to clone the current Blind's Tag reward straight into your inventory.
+  * ⚗️ **Amalgam Tag (`amalgam`)**: Targets an Amalgam fusion recipe and prepares both required Jokers for **$0** (free coupon) in the next shop, plus provides an **Amalgam Potion**.
+  * 🌑 **Dark Alchemy Tag (`alquimia_oscura`)**: Jokers in the next shop and booster packs have **10X** higher chance to be **Negative** (+1$ to reroll cost).
+  * 💼 **Contractor Tag (`contratista`)**: Grants a totally free **Mega Job Application** pack.
+  * 🧪 **Brew Tag (`brew`)**: Immediately spawns **2 random Potions** directly into your consumable slots.
+  * 🧬 **Mutagen Tag (`mutagen`)**: Infuses **2 random cards** in your deck with random Seals or Enhancements.
+  * 🛡️ **Silver Tag (`silver`)**: Instantly disables the Boss Blind for the current Ante.
+  * 💰 **Bounty Tag (`bounty`)**: Awards a **+$10** cash bounty if you defeat the next Blind in a single hand.
+* 🎴 **Deck, Sleeve & UI Balance Polish**:
+  * **Deck Description Auto-Scaler**: Custom UI hook automatically measures lines and enlarges text size (1.15x – 1.30x) for 1–3 line deck descriptions, preventing tiny unreadable text on run selection menus.
+  * **Friendly Deck & Sleeve (Fusion)**: Now includes a chance to roll **Secret Jokers** and **Legendary Jokers** in the starting Negative Eternal trio, with intelligent anti-softlock filtering preventing non-functional sell/destroy jokers.
+  * **Prehistoric Fusion Rework (Caveman Deck + Sleeve)**: Refined starting deck setup—starts with 4 Aces, 4 2s, 4 3s, with all remaining cards converted into Stone Cards (+1 Mult when scored, +1 Hand).
+  * **Alchemist Deck**: Streamlined starting voucher registration, eliminating redundant tooltip insertions.
+* 🎨 **Atmospheric & Menu Enhancements**:
+  * **Custom Witch Brew Main Menu Logo**: Seamlessly renders the new custom title graphic (`title.png`) on the main menu splash screen.
+  * **Boss Blind Shader Protection**: Hardened `ease_background_colour` and state hooks so thematic Boss Blind lighting remains fully active during hands and Tarot card interruptions.
 
 ---
 
@@ -413,10 +446,18 @@ All Boss Blinds feature reactive lighting that alters the table mat, CRT, and li
 * **Recurring Distillation (Destilación Recurrente)**: **15% chance** for any used consumable to be automatically recreated.
 * **Infinite Distillation (Destilación Infinita, Requires Recurring Distillation)**: **45% chance** for any used consumable to be automatically recreated.
 
-### 🏷️ Skip Tags (3)
+### 🏷️ Skip Tags (11)
 * **Discord Tag**: 1 in 5 chance to generate the exclusive **La Muchachada** spectral card.
 * **Witchcraft Tag**: Grants a totally free **Mega Spectral Pack**.
 * **Sale Tag**: All items and rerolls in the next shop have a **50% discount**.
+* **Brew Tag**: Immediately grants **2 random Potions** into your inventory.
+* **Mutagen Tag**: Bestows a random **Seal** and **Enhancement** upon 2 random cards in your deck.
+* **Silver Tag**: Instantly **disables** the Boss Blind for the current Ante.
+* **Bounty Tag**: Grants **+$10** if you defeat the next Blind in **1 hand**.
+* **Amalgam Tag**: Spawns both component Jokers of a random Amalgam recipe for free ($0) in the next shop, plus gives an **Amalgam Potion**.
+* **Dark Alchemy Tag**: Jokers in the next shop and booster packs have **10X chance** to be **Negative** (+1$ to reroll cost).
+* **Contractor Tag**: Grants a free **Mega Job Application** booster pack.
+* **DNA Tag**: **Interactive Clickable HUD Tag!** Click directly on this tag to duplicate the current Blind's Tag.
 
 ---
 

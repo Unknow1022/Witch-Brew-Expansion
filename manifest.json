@@ -1,16 +1,17 @@
 {
     "id": "Witch_brew",
     "name": "Witch_Brew_Expansion",
-    "version_number": "1.4.1",
+    "version_number": "1.4.2",
     "website_url": "https://github.com/Unknow1022/Witch-Brew-Expansion",
-    "description": "Witch Brew Expansion: There no guide, Fun jokers, Compatible with Joker Display, Card Sleeves, Some decks, tags, enchants, JOB CARDS, MUSICAL JOKERS AND MORE!!",
+    "description": "Witch Brew Expansion: A massive expansion featuring 57 Jokers (including 17 Secret & Musical Jokers), Potions & Brews system with custom dynamic particle FX, 11 unique Tags (including interactive DNA Tag and Amalgam Tag), Job Cards, Boss Blinds, 5 Decks, CardSleeves fusions, and full JokerDisplay integration.",
     "dependencies": [],
     "author": [
         "Unknow102"
     ],
     "prefix": "Witch_brew",
     "main_file": "WitcherExpansion.lua",
-    "version": "1.4.1",
+    "icon_path": "icon.png",
+    "version": "1.4.2",
     "optional_dependencies": [
         "CardSleeves",
         "JokerDisplay",

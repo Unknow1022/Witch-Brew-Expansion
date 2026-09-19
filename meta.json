@@ -10,6 +10,8 @@
   "repo": "https://github.com/Unknow1022/Witch-Brew-Expansion",
   "downloadURL": "https://github.com/Unknow1022/Witch-Brew-Expansion/archive/refs/heads/main.zip",
   "folderName": "witch_brew",
-  "version": "1.4",
+  "version": "1.4.2",
+  "icon_path": "icon.png",
+  "description": "Massive Balatro expansion featuring 57 Jokers, dynamic Potion particle FX, 11 Tags, Job cards, Decks, CardSleeves, and JokerDisplay support.",
   "automatic-version-check": true
 }
