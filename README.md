@@ -1,4 +1,4 @@
-# 🃏 Witcher Brew Expansion (v2.0.5)
+# 🃏 Witcher Brew Expansion (v2.0.6)
 
 A content expansion for **Balatro** (Steamodded / Lovely).
 
@@ -235,7 +235,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 
 ## 📜 Changelog
 
-### v2.0.5
+### v2.0.6
 * **The Doppelgänger Rework**: Reworked showdown boss blind mechanics. The Doppelgänger now possesses 1 of your Jokers; whenever that Joker activates, both Chips and Mult are divided by 4 (÷4 Chips & Mult penalty).
 * **Blueprint & Brainstorm Overhaul**: Fixed issue where copying card-spawning Jokers (e.g. Certificate, DNA, Cartomancer, Marble, Mascarada, Balance) caused duplicate triggers, queue desyncs, and consumable slot overflow.
 * **Simulation Safety**: `Falta de Lectura` simulation context now excludes copier Jokers and prevents queuing side-effect spawn events.
