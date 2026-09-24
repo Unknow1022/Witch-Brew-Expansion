@@ -32,7 +32,7 @@ SMODS.Joker {
                         local new_card = create_card('Tarot', G.consumeables, nil, nil, nil, nil, nil, 'mas')
                         new_card:add_to_deck()
                         G.consumeables:emplace(new_card)
-                        G.GAME.consumeable_buffer = 0
+                        G.GAME.consumeable_buffer = math.max(0, (G.GAME.consumeable_buffer or 1) - 1)
                         return true
                     end
                 }))

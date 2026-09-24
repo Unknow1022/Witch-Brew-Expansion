@@ -1,17 +1,18 @@
 {
     "id": "Witch_brew",
     "name": "Witch_Brew_Expansion",
-    "version_number": "2.0.3",
+    "version": "2.0.4",
     "website_url": "https://github.com/Unknow1022/Witch-Brew-Expansion",
-    "description": "Massive Balatro expansion featuring 57 Jokers, custom Potions & Brews with particle FX, 11 unique Tags, Job Cards, Boss Blinds, 5 Decks, CardSleeves support, and JokerDisplay integration.",
-    "dependencies": [],
+    "description": "Massive Balatro expansion featuring 57 Jokers, custom Potions & Brews with particle FX, 11 unique Tags, Job Cards, Boss Blinds, 5 Decks, CardSleeves support, and JokerDisplay integration. Notice: Early versions of this mod (no longer available) originated as an AI experiment; the mod has since evolved into a handcrafted, fully polished expansion.",
+    "dependencies": [
+        "Steamodded (>=26.829.0)"
+    ],
     "author": [
         "Unknow102"
     ],
     "prefix": "Witch_brew",
     "main_file": "WitcherExpansion.lua",
     "icon_path": "icon.png",
-    "version": "2.0.3",
     "optional_dependencies": [
         "CardSleeves",
         "JokerDisplay",

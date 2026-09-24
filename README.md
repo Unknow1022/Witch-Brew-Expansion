@@ -1,6 +1,8 @@
-# 🃏 Witcher Brew Expansion (v2.0.3)
+# 🃏 Witcher Brew Expansion (v2.0.4)
 
 A content expansion for **Balatro** (Steamodded / Lovely).
+
+> **Notice**: Early versions of this mod (which are no longer available) originated as an experiment with artificial intelligence. The mod has since been completely rewritten, refined, and handcrafted into a fully polished expansion.
 
 ---
 
@@ -192,7 +194,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **The Phone**: Only 1st card scores and triggers Jokers; cards 2+ debuffed.
 * **The Void** *(Ante 8+)*: Requirements increase X1.25 per non-winning hand.
 * **The Pincer** *(Ante 8+)*: All Jokers disabled until a card is destroyed.
-* **The Doppelgänger** *(Ante 8+)*: Clones a random Joker and inverts its values in scoring.
+* **The Doppelgänger** *(Ante 8+)*: Possesses 1 of your Jokers; whenever it triggers, both Chips and Mult are divided by 4.
 
 ---
 
@@ -228,3 +230,16 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Dark Alchemy Tag**: 10X chance for Negative Jokers in next shop (+1$ reroll).
 * **Contractor Tag**: Free Mega Job Application pack.
 * **DNA Tag**: Interactive HUD tag; click to duplicate current Blind Tag reward.
+
+---
+
+## 📜 Changelog
+
+### v2.0.4
+* **The Doppelgänger Rework**: Reworked showdown boss blind mechanics. The Doppelgänger now possesses 1 of your Jokers; whenever that Joker activates, both Chips and Mult are divided by 4 (÷4 Chips & Mult penalty).
+* **Blueprint & Brainstorm Overhaul**: Fixed issue where copying card-spawning Jokers (e.g. Certificate, DNA, Cartomancer, Marble, Mascarada, Balance) caused duplicate triggers, queue desyncs, and consumable slot overflow.
+* **Simulation Safety**: `Falta de Lectura` simulation context now excludes copier Jokers and prevents queuing side-effect spawn events.
+* **Consumable Buffer Protection**: Implemented atomic `consumeable_buffer` tracking across all card-granting Jokers (`Headhunter`, `Balance`, `Mascarada`, `Alchemist`, `Miner`).
+* **Custom Blind Lighting & Showdown Stability**: Showdown Blinds (`The Void`, `The Pincer`, `The Doppelgänger`) and Boss Blinds reliably preserve custom ambient color palettes and will not be overwritten by vanilla Showdown Blue/Red backgrounds.
+* **Full English Localization**: Translated remaining boss texts and variables (including `The Doppelgänger`).
+* **Steamodded & Lovely Requirements**: Updated dependency declarations to require Steamodded `>=26.829.0` and Lovely; removed legacy BMM metadata (`meta.json`).

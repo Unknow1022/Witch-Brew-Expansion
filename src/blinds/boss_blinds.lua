@@ -102,6 +102,38 @@ G.Witch_brew_BLIND_THEMES = {
         special_colour = HEX('aeb6bf'),
         tertiary_colour = HEX('070a0d'),
         contrast = 2.5
+    },
+    ['The Doppelgänger'] = {
+        name = 'The Doppelgänger',
+        boss_colour = HEX('1c2833'),
+        new_colour = HEX('0e141a'),
+        special_colour = HEX('aeb6bf'),
+        tertiary_colour = HEX('070a0d'),
+        contrast = 2.5
+    },
+    ['The Doppelganger'] = {
+        name = 'The Doppelgänger',
+        boss_colour = HEX('1c2833'),
+        new_colour = HEX('0e141a'),
+        special_colour = HEX('aeb6bf'),
+        tertiary_colour = HEX('070a0d'),
+        contrast = 2.5
+    },
+    ['The Void'] = {
+        name = 'The Void',
+        boss_colour = HEX('150426'),
+        new_colour = HEX('090112'),
+        special_colour = HEX('b067b1'),
+        tertiary_colour = HEX('000000'),
+        contrast = 3
+    },
+    ['The Pincer'] = {
+        name = 'The Pincer',
+        boss_colour = HEX('777777'),
+        new_colour = HEX('2d3436'),
+        special_colour = HEX('b2bec3'),
+        tertiary_colour = HEX('181d1e'),
+        contrast = 3
     }
 }
 
@@ -127,6 +159,17 @@ function get_witch_brew_blind_theme(blind)
 
     local theme = G.Witch_brew_BLIND_THEMES[key] or (bname ~= '' and G.Witch_brew_BLIND_THEMES[bname])
     if not theme then
+        local lkey = string.lower(key)
+        local lbname = string.lower(bname)
+        if string.find(lkey, 'doppel', 1, true) or string.find(lbname, 'doppel', 1, true) then
+            return G.Witch_brew_BLIND_THEMES['doppelganger']
+        end
+        if string.find(lkey, 'void', 1, true) or string.find(lbname, 'void', 1, true) then
+            return G.Witch_brew_BLIND_THEMES['void']
+        end
+        if string.find(lkey, 'pinza', 1, true) or string.find(lkey, 'pincer', 1, true) or string.find(lbname, 'pincer', 1, true) or string.find(lbname, 'pinza', 1, true) then
+            return G.Witch_brew_BLIND_THEMES['pinza']
+        end
         for k, v in pairs(G.Witch_brew_BLIND_THEMES) do
             if string.find(key, k, 1, true) or (bname ~= '' and (string.find(bname, v.name, 1, true) or string.find(bname, k, 1, true))) then
                 theme = v
@@ -161,7 +204,8 @@ function ease_custom_blind_background(blind)
         new_colour = theme.new_colour,
         special_colour = theme.special_colour,
         tertiary_colour = theme.tertiary_colour,
-        contrast = theme.contrast or 2
+        contrast = theme.contrast or 2,
+        _is_witch_brew_theme = true
     }
 end
 
@@ -657,14 +701,15 @@ SMODS.Blind {
     showdown = true,
     boss_colour = HEX('1c2833'),
     loc_vars = function(self)
-        local target_name = (G.GAME and G.GAME.doppelganger_target_name) or "un Joker al azar"
+        local target_name = (G.GAME and G.GAME.doppelganger_target_name) or "a random Joker"
         return { vars = { target_name } }
     end,
     loc_txt = {
         name = 'The Doppelgänger',
         text = {
-            "Posee a uno de tus Joker y",
-            "ese Joker realiza el efecto inverso"
+            "Possesses 1 of your Jokers.",
+            "When it triggers, divide",
+            "Chips and Mult by 4"
         }
     },
     ease_background_colour = function(self)
@@ -694,6 +739,11 @@ SMODS.Blind {
                     end
                 end
             end
+            if #eligible == 0 then
+                for _, j in ipairs(G.jokers.cards) do
+                    table.insert(eligible, j)
+                end
+            end
         end
 
         if #eligible > 0 then
@@ -706,7 +756,7 @@ SMODS.Blind {
             local jname = (chosen.ability and chosen.ability.name) or (chosen.config and chosen.config.center and chosen.config.center.name) or 'Joker'
             G.GAME.doppelganger_target_name = jname
 
-            self.loc_debuff_text = "Possessed: " .. jname .. " (Inverted)"
+            self.loc_debuff_text = "Possessed: " .. jname .. " (÷4 Chips & Mult)"
             if G.GAME.blind then
                 G.GAME.blind.loc_debuff_text = self.loc_debuff_text
             end
@@ -761,7 +811,7 @@ SMODS.Blind {
                         chosen.doppelganger_reflected = true
                         local jname = (chosen.ability and chosen.ability.name) or (chosen.config and chosen.config.center and chosen.config.center.name) or 'Joker'
                         G.GAME.doppelganger_target_name = jname
-                        self.loc_debuff_text = "Possessed: " .. jname .. " (Inverted)"
+                        self.loc_debuff_text = "Possessed: " .. jname .. " (÷4 Chips & Mult)"
                         if G.GAME.blind then
                             G.GAME.blind.loc_debuff_text = self.loc_debuff_text
                         end
@@ -772,7 +822,7 @@ SMODS.Blind {
                 end
             end
 
-            -- Si el Joker infectado reactiva cartas jugadas: ignorar esas cartas por completo
+            -- If the possessed Joker is a retrigger Joker, flag for ÷4 penalty instead of debuffing cards
             local target = G.GAME.doppelganger_target
             if target and not target.debuff and context.scoring_hand then
                 for _, scoring_card in ipairs(context.scoring_hand) do
@@ -786,33 +836,27 @@ SMODS.Blind {
                         doppel_sim = true
                     })
                     if rep_eval and (rep_eval.repetitions or (type(rep_eval) == 'table' and rep_eval.jokers and rep_eval.jokers.repetitions)) then
-                        scoring_card.doppel_ignored = true
-                        scoring_card.debuff = true
-                        G.E_MANAGER:add_event(Event({
-                            trigger = 'after',
-                            delay = 0.15,
-                            func = function()
-                                scoring_card:juice_up(0.4, 0.4)
-                                card_eval_status_text(scoring_card, 'extra', nil, nil, nil, {
-                                    message = 'Ignored!',
-                                    colour = HEX('aeb6bf')
-                                })
-                                return true
-                            end
-                        }))
+                        G.GAME.doppel_retrigger_penalized = true
                     end
                 end
             end
         end
 
-        -- Limpiar cartas ignoradas una vez finalizada la evaluación de la mano
-        if context.after and context.scoring_hand then
-            for _, c in ipairs(context.scoring_hand) do
-                if c.doppel_ignored then
-                    c.doppel_ignored = nil
-                    c.debuff = nil
-                end
+        if context.after and G.GAME.doppel_retrigger_penalized then
+            G.GAME.doppel_retrigger_penalized = nil
+            if G.GAME.blind then
+                G.GAME.blind:juice_up(0.4, 0.4)
             end
+            if G.GAME.doppelganger_target then
+                G.GAME.doppelganger_target:juice_up(0.4, 0.4)
+            end
+            play_sound('blind_chips', 0.8, 0.7)
+            return {
+                x_chips = 0.25,
+                Xmult = 0.25,
+                message = '÷4 Chips & Mult!',
+                colour = G.C.RED
+            }
         end
     end,
     defeat = function(self)

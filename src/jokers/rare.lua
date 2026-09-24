@@ -190,22 +190,27 @@ SMODS.Joker {
                 end
 
                 if same_suit then
-                    G.E_MANAGER:add_event(Event({
-                        func = function()
-                            for i = 1, card.ability.extra.spectral_count do
-                                if #G.consumeables.cards < G.consumeables.config.card_limit then
+                    local count = (card.ability and card.ability.extra and card.ability.extra.spectral_count) or 1
+                    local free_slots = math.max(0, G.consumeables.config.card_limit - (#G.consumeables.cards + (G.GAME.consumeable_buffer or 0)))
+                    local to_create = math.min(count, free_slots)
+                    if to_create > 0 then
+                        G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer or 0) + to_create
+                        G.E_MANAGER:add_event(Event({
+                            func = function()
+                                for i = 1, to_create do
                                     local spectral_card = create_card('Spectral', G.consumeables, nil, nil, nil, nil, nil, 'balance')
                                     spectral_card:add_to_deck()
                                     G.consumeables:emplace(spectral_card)
+                                    G.GAME.consumeable_buffer = math.max(0, (G.GAME.consumeable_buffer or 1) - 1)
                                 end
+                                return true
                             end
-                            return true
-                        end
-                    }))
-                    return {
-                        message = 'Balance!',
-                        colour = G.C.SECONDARY_SET.Spectral
-                    }
+                        }))
+                        return {
+                            message = 'Balance!',
+                            colour = G.C.SECONDARY_SET.Spectral
+                        }
+                    end
                 end
             end
         end
@@ -614,13 +619,15 @@ SMODS.Joker {
         -- Round end core extraction
         if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
             if (card.ability.extra.depth or 0) >= 300 then
-                if #G.consumeables.cards < G.consumeables.config.card_limit then
+                if #G.consumeables.cards + (G.GAME.consumeable_buffer or 0) < G.consumeables.config.card_limit then
+                    G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer or 0) + 1
                     G.E_MANAGER:add_event(Event({
                         func = function()
                             play_sound('tarot1')
                             local sc = create_card('Spectral', G.consumeables, nil, nil, nil, nil, nil, 'miner_core')
                             sc:add_to_deck()
                             G.consumeables:emplace(sc)
+                            G.GAME.consumeable_buffer = math.max(0, (G.GAME.consumeable_buffer or 1) - 1)
                             sc:juice_up(0.6, 0.6)
                             return true
                         end
@@ -1516,7 +1523,7 @@ SMODS.Joker {
                         local planet = create_card('Planet', G.consumeables, nil, nil, nil, nil, nil, 'alq')
                         planet:add_to_deck()
                         G.consumeables:emplace(planet)
-                        G.GAME.consumeable_buffer = 0
+                        G.GAME.consumeable_buffer = math.max(0, (G.GAME.consumeable_buffer or 1) - 1)
                         planet:juice_up(0.5, 0.5)
                         card:juice_up(0.3, 0.3)
                         return true

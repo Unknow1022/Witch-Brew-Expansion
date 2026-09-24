@@ -693,7 +693,8 @@ SMODS.Joker {
             if G.jokers and G.jokers.cards then
                 for _, j in ipairs(G.jokers.cards) do
                     local is_self = card_has_key(j, 'reading_deficiency_joker')
-                    if not is_self and not j.debuff and j.calculate_joker then
+                    local is_copier = (j.ability and (j.ability.name == 'Blueprint' or j.ability.name == 'Brainstorm' or j.ability.name == 'Chameleon'))
+                    if not is_self and not is_copier and not j.debuff and j.calculate_joker then
                         local check_ctx = {}
                         for k, v in pairs(context) do check_ctx[k] = v end
                         check_ctx.falta_de_lectura_check = true
@@ -897,7 +898,8 @@ SMODS.Joker {
     calculate = function(self, card, context)
         if context.before and not context.blueprint then
             if pseudorandom('contratado') < (G.GAME and G.GAME.probabilities.normal or 1) / card.ability.extra.odds then
-                if G.consumeables and #G.consumeables.cards < G.consumeables.config.card_limit then
+                if G.consumeables and #G.consumeables.cards + (G.GAME.consumeable_buffer or 0) < G.consumeables.config.card_limit then
+                    G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer or 0) + 1
                     G.E_MANAGER:add_event(Event({
                         trigger = 'after',
                         delay = 0.3,
@@ -913,6 +915,7 @@ SMODS.Joker {
                             local new_card = create_card('Job', G.consumeables, nil, nil, nil, nil, chosen_job, 'contratado')
                             new_card:add_to_deck()
                             G.consumeables:emplace(new_card)
+                            G.GAME.consumeable_buffer = math.max(0, (G.GAME.consumeable_buffer or 1) - 1)
                             new_card:juice_up(0.4, 0.4)
                             card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Job Offered!', colour = HEX('5c1e11') })
                             return true

@@ -617,19 +617,23 @@ end
 if ease_background_colour then
     local orig_ease_bg = ease_background_colour
     function ease_background_colour(args)
-        if args and G.GAME and G.GAME.blind and not G.GAME.blind.disabled then
-            local in_round = (G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.HAND_PLAYED or G.STATE == G.STATES.DRAW_TO_HAND or G.STATE == G.STATES.PLAY_TAROT or (G.TAROT_INTERRUPT and G.TAROT_INTERRUPT ~= G.STATES.SHOP and G.TAROT_INTERRUPT ~= G.STATES.ROUND_EVAL and G.TAROT_INTERRUPT ~= G.STATES.BLIND_SELECT))
-            if in_round then
+        if args and not args._is_witch_brew_theme and G.GAME and G.GAME.blind and not G.GAME.blind.disabled then
+            local is_pack = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK or
+                             G.STATE == G.STATES.STANDARD_PACK or G.STATE == G.STATES.BUFFOON_PACK or
+                             G.STATE == G.STATES.PLANET_PACK)
+            local not_in_menu = (G.STATE ~= G.STATES.SHOP and G.STATE ~= G.STATES.ROUND_EVAL and G.STATE ~= G.STATES.BLIND_SELECT)
+            if not_in_menu and not is_pack then
                 local theme = get_witch_brew_blind_theme and get_witch_brew_blind_theme(G.GAME.blind)
-                local def_small = (G.C and G.C.BLIND and G.C.BLIND['Small'])
-                local is_default_bg = (args.new_colour == def_small) or (type(args.new_colour) == 'table' and def_small and args.new_colour[1] == def_small[1] and args.new_colour[2] == def_small[2] and args.new_colour[3] == def_small[3])
-                if theme and is_default_bg then
+                if theme then
                     args.new_colour = theme.new_colour
                     args.special_colour = theme.special_colour
                     args.tertiary_colour = theme.tertiary_colour
                     args.contrast = theme.contrast or 2
-                elseif is_default_bg and G.GAME.blind.boss then
-                    return
+                    args._is_witch_brew_theme = true
+                elseif G.GAME.blind.boss then
+                    local def_small = (G.C and G.C.BLIND and G.C.BLIND['Small'])
+                    local is_default_bg = (args.new_colour == def_small) or (type(args.new_colour) == 'table' and def_small and args.new_colour[1] == def_small[1] and args.new_colour[2] == def_small[2] and args.new_colour[3] == def_small[3])
+                    if is_default_bg then return end
                 end
             end
         end
@@ -676,7 +680,7 @@ if ease_background_colour_blind then
             theme = get_witch_brew_blind_theme and get_witch_brew_blind_theme(blindname)
         end
 
-        if theme and state ~= G.STATES.SHOP and state ~= G.STATES.ROUND_EVAL and blind_override ~= '' then
+        if theme and state ~= G.STATES.SHOP and state ~= G.STATES.ROUND_EVAL then
             ease_custom_blind_background(blind or blindname)
             return
         end
@@ -1324,33 +1328,20 @@ function Card:calculate_joker(context, ...)
         return nil
     end
 
-    if context and (context.ending_shop or context.setting_blind) then
-        if G.GAME then G.GAME.dark_alchemy_tag_active = nil end
+    -- Prevent Blueprint/Brainstorm side effects and duplicate actions during simulation checks
+    if context and context.falta_de_lectura_check then
+        if context.blueprint or (self.ability and (self.ability.name == 'Blueprint' or self.ability.name == 'Brainstorm')) then
+            return nil
+        end
+        local orig_add_event = G.E_MANAGER and G.E_MANAGER.add_event
+        if orig_add_event then G.E_MANAGER.add_event = function() end end
+        local ret, post = calculate_joker_ref(self, context, ...)
+        if orig_add_event then G.E_MANAGER.add_event = orig_add_event end
+        return ret, post
     end
 
-    if context and context.setting_blind and not context.blueprint and G.GAME and not G.GAME.witch_brew_first_hand_scheduled then
-        G.GAME.witch_brew_first_hand_scheduled = true
-        G.E_MANAGER:add_event(Event({
-            trigger = 'after',
-            delay = 0.8,
-            blockable = false,
-            func = function()
-                if G.GAME then G.GAME.witch_brew_first_hand_scheduled = nil end
-                if G.jokers and G.jokers.cards then
-                    for _, jk in ipairs(G.jokers.cards) do
-                        jk:calculate_joker({ first_hand_drawn = true })
-                    end
-                end
-                if G.hand and G.hand.cards then
-                    for _, c in ipairs(G.hand.cards) do
-                        if c.calculate_joker then
-                            c:calculate_joker({ first_hand_drawn = true })
-                        end
-                    end
-                end
-                return true
-            end
-        }))
+    if context and (context.ending_shop or context.setting_blind) then
+        if G.GAME then G.GAME.dark_alchemy_tag_active = nil end
     end
 
     -- Doppelgänger: prevent retrigger from activating if this Joker is possessed
@@ -1387,104 +1378,42 @@ function Card:calculate_joker(context, ...)
         end
     end
 
-    -- Doppelgänger real-time per-activation counter hook (inverts mult, chips, and divides xmult)
+    -- Doppelgänger real-time per-activation penalty hook (divides both Chips and Mult by 4 upon activation)
     if is_doppel_active and G.GAME.doppelganger_target and self == G.GAME.doppelganger_target and ret and type(ret) == 'table' and not self.debuff and context then
-        if not context.end_of_round and not context.ending_shop and not context.starting_shop and not context.setting_blind and not context.doppel_sim then
-            local modified = false
-
-            -- Invert Mult (adds mult -> subtracts mult)
-            if ret.mult and type(ret.mult) == 'number' and ret.mult > 0 then
-                local orig_m = ret.mult
-                ret.mult = -orig_m
-                ret.message = '-' .. tostring(orig_m) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-            if ret.mult_mod and type(ret.mult_mod) == 'number' and ret.mult_mod > 0 then
-                local orig_m = ret.mult_mod
-                ret.mult_mod = -orig_m
-                ret.message = '-' .. tostring(orig_m) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-            if ret.h_mult and type(ret.h_mult) == 'number' and ret.h_mult > 0 then
-                local orig_m = ret.h_mult
-                ret.h_mult = -orig_m
-                ret.message = '-' .. tostring(orig_m) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
+        if not context.end_of_round and not context.ending_shop and not context.starting_shop and not context.setting_blind and not context.doppel_sim and not context.edition and not context.selling_card and not context.buying_card and not context.open_booster and not context.skip_blind then
+            local is_activation = false
+            if (ret.mult and ret.mult ~= 0) or (ret.mult_mod and ret.mult_mod ~= 0) or (ret.h_mult and ret.h_mult ~= 0) or
+               (ret.chips and ret.chips ~= 0) or (ret.chip_mod and ret.chip_mod ~= 0) or (ret.h_chips and ret.h_chips ~= 0) or
+               (ret.Xmult and ret.Xmult ~= 1) or (ret.x_mult and ret.x_mult ~= 1) or (ret.Xmult_mod and ret.Xmult_mod ~= 1) or (ret.h_x_mult and ret.h_x_mult ~= 1) or
+               (ret.x_chips and ret.x_chips ~= 1) or (ret.repetitions and ret.repetitions > 0) or
+               ret.dollars or ret.p_dollars or ret.swap or ret.message or ret.level_up then
+                is_activation = true
             end
 
-            -- Invert Chips (adds chips -> subtracts chips)
-            if ret.chips and type(ret.chips) == 'number' and ret.chips > 0 then
-                local orig_c = ret.chips
-                ret.chips = -orig_c
-                ret.message = '-' .. tostring(orig_c) .. ' Chips'
-                ret.colour = G.C.CHIPS
-                modified = true
-            end
-            if ret.chip_mod and type(ret.chip_mod) == 'number' and ret.chip_mod > 0 then
-                local orig_c = ret.chip_mod
-                ret.chip_mod = -orig_c
-                ret.message = '-' .. tostring(orig_c) .. ' Chips'
-                ret.colour = G.C.CHIPS
-                modified = true
-            end
-            if ret.h_chips and type(ret.h_chips) == 'number' and ret.h_chips > 0 then
-                local orig_c = ret.h_chips
-                ret.h_chips = -orig_c
-                ret.message = '-' .. tostring(orig_c) .. ' Chips'
-                ret.colour = G.C.CHIPS
-                modified = true
-            end
-
-            -- Invert XMult (multiplies -> divides)
-            if ret.Xmult and type(ret.Xmult) == 'number' and ret.Xmult > 1 then
-                local orig_xm = ret.Xmult
-                ret.Xmult = 1 / orig_xm
-                ret.message = '/' .. string.format('%.2g', orig_xm) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-            if ret.x_mult and type(ret.x_mult) == 'number' and ret.x_mult > 1 then
-                local orig_xm = ret.x_mult
-                ret.x_mult = 1 / orig_xm
-                ret.message = '/' .. string.format('%.2g', orig_xm) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-            if ret.Xmult_mod and type(ret.Xmult_mod) == 'number' and ret.Xmult_mod > 1 then
-                local orig_xm = ret.Xmult_mod
-                ret.Xmult_mod = 1 / orig_xm
-                ret.message = '/' .. string.format('%.2g', orig_xm) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-            if ret.h_x_mult and type(ret.h_x_mult) == 'number' and ret.h_x_mult > 1 then
-                local orig_xm = ret.h_x_mult
-                ret.h_x_mult = 1 / orig_xm
-                ret.message = '/' .. string.format('%.2g', orig_xm) .. ' Mult'
-                ret.colour = G.C.RED
-                modified = true
-            end
-
-            -- Invert XChips
-            if ret.x_chips and type(ret.x_chips) == 'number' and ret.x_chips > 1 then
-                local orig_xc = ret.x_chips
-                ret.x_chips = 1 / orig_xc
-                ret.message = '/' .. string.format('%.2g', orig_xc) .. ' Chips'
-                ret.colour = G.C.CHIPS
-                modified = true
-            end
-
-            -- Invert repetition (block any returned repetition)
-            if ret.repetitions then
+            if is_activation then
+                -- Strip original beneficial stats
+                ret.mult = nil
+                ret.mult_mod = nil
+                ret.h_mult = nil
+                ret.chips = nil
+                ret.chip_mod = nil
+                ret.h_chips = nil
+                ret.dollars = nil
+                ret.p_dollars = nil
                 ret.repetitions = nil
-                modified = true
-            end
+                ret.swap = nil
+                ret.level_up = nil
 
-            if modified then
+                -- Divide score by 4 (0.25x in both Chips and Mult)
+                ret.x_chips = 0.25
+                ret.Xchip_mod = 0.25
+                ret.x_mult = 0.25
+                ret.Xmult = 0.25
+                ret.Xmult_mod = 0.25
+                ret.message = '÷4 Chips & Mult!'
+                ret.colour = G.C.RED
                 ret.card = self
+
                 if G.GAME and G.GAME.blind then
                     G.GAME.blind:juice_up(0.4, 0.4)
                 end
