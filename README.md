@@ -1,4 +1,4 @@
-# 🃏 Witcher Brew Expansion (v2.0.6)
+# 🃏 Witcher Brew Expansion (v2.1.1)
 
 A content expansion for **Balatro** (Steamodded / Lovely).
 
@@ -121,7 +121,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 
 ---
 
-## 🧪 Potions & Brews (8)
+## 🧪 Potions & Brews (18)
 *Stored in the dedicated Potion Pouch (`[ 🧪 POUCH ]`).*
 
 * **Stretch Potion** ($4): Play up to 7 cards in the next hand.
@@ -132,6 +132,16 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Mercury Potion** ($4): +$1 per remaining hand upon defeating the blind.
 * **Mirror Potion** ($5): Retriggers rightmost Joker during scoring.
 * **Clock Potion** ($5): Returns last played hand cards back to hand; +1 Hand next round.
+* **Swallow Potion** ($4): Grants +2 Hands and +1 Discard for the current round.
+* **Tawny Owl Potion** ($5): +1 Consumable slot and creates 1 random Potion.
+* **Petri's Philter** ($5): All held Potions have their numerical effects doubled.
+* **Golden Oriole Potion** ($5): Converts all debuffed cards in hand into Gold cards ($3 payout).
+* **Black Blood Potion** ($5): Enhances up to 2 selected cards into Glass Cards and adds an Edition.
+* **White Honey Potion** ($5): Purges Perishable and Rental stickers from all Jokers; reduces Blind score by 1.5% per card in deck (up to 60%).
+* **Kikimore Hive Ichor** ($5): For the rest of the Ante, played cards permanently grant +10 Chips to all matching ranks in your unplayed deck.
+* **Drowner Pheromone Flask** ($5): Rewinds time in the current realm: reduces Ante by 1 and grants +$10 sunken treasure.
+* **Thunderbolt Potion** ($4): Cards played in your next hand permanently gain +50 Bonus Chips and +10 Mult.
+* **White Raffard's Decoction** ($4): Emergency vitality elixir: grants +1 Hand, +2 Discards this round, and +$6.
 
 ---
 
@@ -218,7 +228,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Recurring Distillation**: 15% chance to recreate used consumables.
 * **Infinite Distillation**: 45% chance to recreate used consumables.
 
-### Tags (11)
+### Tags (16)
 * **Discord Tag**: 1 in 5 chance for La Muchachada spectral.
 * **Witchcraft Tag**: Free Mega Spectral Pack.
 * **Sale Tag**: 50% discount on items and rerolls in next shop.
@@ -230,12 +240,17 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Dark Alchemy Tag**: 10X chance for Negative Jokers in next shop (+1$ reroll).
 * **Contractor Tag**: Free Mega Job Application pack.
 * **DNA Tag**: Interactive HUD tag; click to duplicate current Blind Tag reward.
+* **Echo Tag**: Duplicates the next acquired Tag 2 times.
+* **Black Market Tag**: Spawns 2 free Negative consumables in next shop; rerolls cost $0.
+* **Prismatic Tag**: Next round, the first 3 cards drawn to hand gain a random Edition.
+* **Adrenaline Tag**: Next round starts with +2 Hands and +2 Discards.
+* **Catalyst Tag**: Adds Negative to 1 random held Potion and awards +$5.
 
 ---
 
 ## 📜 Changelog
 
-### v2.0.6
+### v2.1.0
 * **The Doppelgänger Rework**: Reworked showdown boss blind mechanics. The Doppelgänger now possesses 1 of your Jokers; whenever that Joker activates, both Chips and Mult are divided by 4 (÷4 Chips & Mult penalty).
 * **Blueprint & Brainstorm Overhaul**: Fixed issue where copying card-spawning Jokers (e.g. Certificate, DNA, Cartomancer, Marble, Mascarada, Balance) caused duplicate triggers, queue desyncs, and consumable slot overflow.
 * **Simulation Safety**: `Falta de Lectura` simulation context now excludes copier Jokers and prevents queuing side-effect spawn events.

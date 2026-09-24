@@ -1,6 +1,6 @@
 --[[
     Witch Brew Expansion
-    Version: 2.0.6
+    Version: 2.1.1
     Author: Unknow102
     Framework: Steamodded (SMODS)
 
