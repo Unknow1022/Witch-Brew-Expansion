@@ -35,27 +35,42 @@ SMODS.Joker {
             end
         end
 
-        -- Cure Perishable Jokers: destroy perishable copy and create a fresh clean one
-        if (context.end_of_round or context.starting_shop) and not context.blueprint and not context.individual and not context.repetition then
+        -- Cure Perishable Jokers: replace perishable copy with 1 clean copy
+        if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
             card.ability.extra.defibrillator_used = false
             if G.jokers and G.jokers.cards then
                 for _, j in ipairs(G.jokers.cards) do
-                    if j ~= card and j.ability and j.ability.perishable and not j.cured_by_doctor_jo then
+                    if j ~= card and (j.perishable or (j.ability and j.ability.perishable)) and not j.cured_by_doctor_jo and not j.sold and not j.dissolving then
                         j.cured_by_doctor_jo = true
                         local target_j = j
                         G.E_MANAGER:add_event(Event({
                             trigger = 'after',
                             delay = 0.3,
                             func = function()
+                                if not target_j or target_j.sold or not target_j.area or target_j.area ~= G.jokers then
+                                    return true
+                                end
+                                if not card or card.sold or not card.area or card.area ~= G.jokers then
+                                    return true
+                                end
+
                                 play_sound('tarot1')
                                 local j_key = (target_j.config and target_j.config.center and target_j.config.center.key) or (target_j.config and target_j.config.center_key)
                                 local j_ed = target_j.edition
                                 target_j:start_dissolve()
+                                G.jokers:remove_card(target_j)
+
                                 local clean_j = create_card('Joker', G.jokers, nil, nil, nil, nil, j_key, 'doctor_jo')
+                                if clean_j.set_perishable then
+                                    clean_j:set_perishable(false)
+                                end
+                                clean_j.perishable = nil
                                 if clean_j.ability then
                                     clean_j.ability.perishable = nil
                                     clean_j.ability.perish_tally = nil
                                 end
+                                clean_j.cured_by_doctor_jo = true
+
                                 if j_ed then clean_j:set_edition(j_ed, true) end
                                 clean_j:add_to_deck()
                                 G.jokers:emplace(clean_j)

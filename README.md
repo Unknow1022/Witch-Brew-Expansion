@@ -1,4 +1,4 @@
-# 🃏 Witcher Brew Expansion (v2.0.2)
+# 🃏 Witcher Brew Expansion (v2.0.3)
 
 A content expansion for **Balatro** (Steamodded / Lovely).
 

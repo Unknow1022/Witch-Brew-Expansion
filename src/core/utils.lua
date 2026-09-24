@@ -1377,7 +1377,7 @@ function Card:calculate_joker(context, ...)
 
     if ret and type(ret) == 'table' and next(ret) and not self.debuff and context and not context.falta_de_lectura_check then
         local key = (self.config and self.config.center and self.config.center.key) or self.config.center_key or (self.ability and self.ability.name)
-        local is_self = (key == 'j_Witch_brew_falta_de_lectura_joker' or key == 'falta_de_lectura_joker' or key == 'j_falta_de_lectura_joker' or key == 'falta_de_lectura')
+        local is_self = (key == 'j_Witch_brew_falta_de_lectura_joker' or key == 'falta_de_lectura_joker' or key == 'j_falta_de_lectura_joker' or key == 'falta_de_lectura' or card_has_key(self, 'reading_deficiency_joker'))
         if not is_self then
             if context.joker_main or context.individual or context.before or context.repetition then
                 if ret.mult or ret.chips or ret.Xmult or ret.x_mult or ret.dollars or ret.x_chips or ret.p_dollars or ret.message or ret.swap then
@@ -1761,6 +1761,17 @@ function alias_all_witch_brew_centers()
                     ['c_Witch_brew_transmutacion'] = 'c_Witch_brew_transmutation',
                     ['c_Witch_brew_la_muchachada'] = 'c_Witch_brew_the_gang',
                     ['c_Witch_brew_minero_job'] = 'c_Witch_brew_miner_job',
+                    ['j_Witch_brew_falta_de_lectura_joker'] = 'j_Witch_brew_reading_deficiency_joker',
+                    ['j_Witch_brew_designer_joker'] = 'j_Witch_brew_disenador_joker',
+                    ['j_Witch_brew_charco_pintura_joker'] = 'j_Witch_brew_paint_puddle_joker',
+                    ['j_Witch_brew_duelo_de_valores_joker'] = 'j_Witch_brew_duel_of_value_joker',
+                    ['j_Witch_brew_sobresaturado_joker'] = 'j_Witch_brew_oversaturated_joker',
+                    ['j_Witch_brew_motorizado_joker'] = 'j_Witch_brew_motorized_joker',
+                    ['j_Witch_brew_contratado_joker'] = 'j_Witch_brew_hired_joker',
+                    ['j_Witch_brew_sello_aprobacion_joker'] = 'j_Witch_brew_seal_of_approval_joker',
+                    ['j_Witch_brew_lesionado_joker'] = 'j_Witch_brew_injured_joker',
+                    ['j_Witch_brew_mano_extendida'] = 'j_Witch_brew_extended_hand',
+                    ['j_Witch_brew_hoguera'] = 'j_Witch_brew_bonfire',
                 }
                 if type(k) == 'string' and key_renames[k] then
                     return rawget(t, key_renames[k])

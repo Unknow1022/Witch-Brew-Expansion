@@ -62,7 +62,7 @@ local challenge_definitions = {
             }
         },
         jokers = {
-            { id = 'j_Witch_brew_falta_de_lectura_joker', eternal = true }
+            { id = 'j_Witch_brew_reading_deficiency_joker', eternal = true }
         },
         deck = {
             type = 'Challenge Deck'
@@ -569,7 +569,7 @@ end
 local orig_create_card = create_card
 function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
     local card = orig_create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
-    if _type == 'Joker' and card and G.GAME and G.GAME.modifiers and G.GAME.modifiers.all_perishable then
+    if _type == 'Joker' and card and G.GAME and G.GAME.modifiers and G.GAME.modifiers.all_perishable and key_append ~= 'doctor_jo' then
         if card.set_perishable then
             card:set_perishable(true)
         else

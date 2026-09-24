@@ -2270,6 +2270,8 @@ jd_def["j_Witch_brew_macabre_emoji"] = {
 
 -- Universal Aliasing, Key resolver
 local cross_aliases = {
+    ['disenador_joker'] = 'designer_joker',
+    ['designer_joker'] = 'disenador_joker',
     ['falta_de_lectura_joker'] = 'reading_deficiency_joker',
     ['reading_deficiency_joker'] = 'falta_de_lectura_joker',
     ['duelo_de_valores_joker'] = 'duel_of_value_joker',

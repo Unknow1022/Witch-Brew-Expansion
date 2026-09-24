@@ -212,6 +212,38 @@ SMODS.Joker {
     end,
 }
 
+-- Designer Joker
+SMODS.Joker {
+    key = 'disenador_joker',
+    atlas = 'witch_brew_jokers',
+    loc_txt = {
+        name = 'Designer Joker',
+        text = {
+            "Scored {C:attention}Wild Cards{} give {C:money}$#1#{}"
+        }
+    },
+    config = { extra = { dollars = 1 } },
+    rarity = 1,
+    pos = { x = 4, y = 0 },
+    cost = 4,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return { vars = { (card and card.ability and card.ability.extra and card.ability.extra.dollars) or 1 } }
+    end,
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play then
+            if is_wild_card(context.other_card) then
+                local d = (card.ability and card.ability.extra and card.ability.extra.dollars) or 1
+                ease_dollars(d)
+                return {
+                    dollars = d,
+                    card = card
+                }
+            end
+        end
+    end
+}
+
 -- Discard Accumulator
 SMODS.Joker {
     key = 'discard_accumulator',
@@ -639,7 +671,7 @@ SMODS.Joker {
                 end
                 if #candidates > 0 then
                     local target = pseudorandom_element(candidates, pseudoseed('pacto_sangre'))
-                    local editions = { 'e_foil', 'e_holo', 'e_polychrome' }
+                    local editions = { 'foil', 'holo', 'polychrome' }
                     local ed = pseudorandom_element(editions, pseudoseed('pacto_sangre_ed'))
                     G.E_MANAGER:add_event(Event({
                         trigger = 'after',
