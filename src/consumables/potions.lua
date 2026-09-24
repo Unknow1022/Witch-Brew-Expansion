@@ -21,7 +21,7 @@ SMODS.ConsumableType {
         underscores_plural = 'Potions'
     },
     shop_rate = 0.8,
-    collection_rows = { 3, 5 },
+    collection_rows = { 4, 5 },
     default = 'c_Witch_brew_potion_stretch'
 }
 
@@ -33,7 +33,17 @@ local function get_potion_particle_colours(card)
         or (card and card.ability and card.ability.name)
         or ''
     key = string.lower(tostring(key))
-    if string.find(key, 'amalgam', 1, true) or string.find(key, 'amalgama', 1, true) then
+    if string.find(key, 'white_honey', 1, true) or string.find(key, 'miel_blanca', 1, true) then
+        return { HEX('ffffff'), HEX('fef08a'), HEX('facc15'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'kikimore', 1, true) or string.find(key, 'kikimora', 1, true) then
+        return { HEX('a855f7'), HEX('4ade80'), HEX('6b21a8'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'drowner', 1, true) or string.find(key, 'sumergido', 1, true) then
+        return { HEX('0d9488'), HEX('2dd4bf'), HEX('99f6e4'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'thunderbolt', 1, true) then
+        return { HEX('f59e0b'), HEX('facc15'), HEX('fffbeb'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'white_raffard', 1, true) or string.find(key, 'raffard', 1, true) then
+        return { HEX('ef4444'), HEX('dc2626'), HEX('cbd5e1'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'amalgam', 1, true) or string.find(key, 'amalgama', 1, true) then
         return { HEX('a855f7'), HEX('ec4899'), HEX('3b82f6'), HEX('10b981'), HEX('fbbf24'), { 1, 1, 1, 0.95 } }
     elseif string.find(key, 'lightning', 1, true) or string.find(key, 'rayo', 1, true) or string.find(key, 'trueno', 1, true) then
         return { HEX('f59e0b'), HEX('fbbf24'), HEX('fef08a'), { 1, 1, 1, 0.95 } }
@@ -1349,6 +1359,190 @@ SMODS.Consumable {
     end
 }
 
+-- 14. White Honey Potion
+SMODS.Consumable {
+    key = 'potion_white_honey',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 3, y = 2 },
+    cost = 5,
+    loc_txt = {
+        name = 'White Honey Potion',
+        text = {
+            "Purges {C:attention}Perishable{} and {C:attention}Rental{} stickers",
+            "from all owned Jokers, and reduces current",
+            "Blind score requirement by {C:attention}1.5%{} per card in deck",
+            "{C:inactive}(Max 60% reduction){}"
+        }
+    },
+    can_use = function(self, card)
+        return true
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot1')
+                card:juice_up(0.5, 0.6)
+                if G.jokers and G.jokers.cards then
+                    for _, j in ipairs(G.jokers.cards) do
+                        if j.set_perishable then j:set_perishable(false) end
+                        if j.set_rental then j:set_rental(false) end
+                        j.ability.perishable = nil
+                        j.ability.perish_tally = nil
+                        j.ability.rental = nil
+                        j:juice_up(0.3, 0.3)
+                    end
+                end
+                if G.GAME and G.GAME.blind and G.GAME.blind.chips then
+                    local rem = (G.deck and #G.deck.cards) or 0
+                    local reduce_pct = math.min(0.60, rem * 0.015)
+                    G.GAME.blind.chips = math.max(1, math.floor(G.GAME.blind.chips * (1 - reduce_pct)))
+                    G.GAME.blind.chip_text = number_format(G.GAME.blind.chips)
+                end
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Purged & Reduced!', colour = G.C.GREEN })
+                return true
+            end
+        }))
+    end
+}
+
+-- 15. Kikimore Hive Ichor
+SMODS.Consumable {
+    key = 'potion_kikimore',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 4, y = 2 },
+    cost = 5,
+    loc_txt = {
+        name = 'Kikimore Hive Ichor',
+        text = {
+            "For the rest of this Ante, whenever cards",
+            "are played, every matching rank in your",
+            "{C:attention}unplayed deck{} permanently gains {C:chips}+10{} Chips"
+        }
+    },
+    can_use = function(self, card)
+        return G.STATE == G.STATES.SELECTING_HAND
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot2')
+                card:juice_up(0.5, 0.6)
+                G.GAME.potion_kikimore_active = true
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Hive Resonating!', colour = G.C.PURPLE })
+                return true
+            end
+        }))
+    end
+}
+
+-- 16. Drowner Pheromone Flask
+SMODS.Consumable {
+    key = 'potion_drowner',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 0, y = 3 },
+    cost = 5,
+    loc_txt = {
+        name = 'Drowner Pheromone Flask',
+        text = {
+            "Rewinds time in the current realm:",
+            "Reduces {C:attention}Ante{} by {C:attention}1{}, and",
+            "earns {C:money}+$10{} sunken treasure"
+        }
+    },
+    can_use = function(self, card)
+        return G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante and G.GAME.round_resets.ante > 1
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot1')
+                card:juice_up(0.5, 0.6)
+                ease_ante(-1)
+                G.GAME.round_resets.blind_ante = G.GAME.round_resets.blind_ante or G.GAME.round_resets.ante
+                ease_dollars(10)
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Ante -1!', colour = G.C.DARK_EDITION })
+                return true
+            end
+        }))
+    end
+}
+
+-- 17. Thunderbolt Potion
+SMODS.Consumable {
+    key = 'potion_thunderbolt',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 1, y = 3 },
+    cost = 4,
+    loc_txt = {
+        name = 'Thunderbolt Potion',
+        text = {
+            "Cards played in your next hand",
+            "permanently gain {C:chips}+50{} Bonus Chips",
+            "and {C:mult}+10{} Mult"
+        }
+    },
+    can_use = function(self, card)
+        return G.STATE == G.STATES.SELECTING_HAND
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot2')
+                card:juice_up(0.5, 0.6)
+                G.GAME.potion_thunderbolt_active = true
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Thunderbolt Armed!', colour = G.C.GOLD })
+                return true
+            end
+        }))
+    end
+}
+
+-- 18. White Raffard's Decoction
+SMODS.Consumable {
+    key = 'potion_white_raffard',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 2, y = 3 },
+    cost = 4,
+    loc_txt = {
+        name = "White Raffard's Decoction",
+        text = {
+            "Emergency elixir: Grants {C:blue}+1{} Hand,",
+            "{C:red}+2{} Discards this round, and {C:money}+$6{}"
+        }
+    },
+    can_use = function(self, card)
+        return G.STATE == G.STATES.SELECTING_HAND
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot1')
+                card:juice_up(0.5, 0.6)
+                ease_hands_played(1)
+                ease_discard(2)
+                ease_dollars(6)
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = '+1 Hand / +2 Discards!', colour = G.C.GREEN })
+                return true
+            end
+        }))
+    end
+}
+
 -- Potion Engine Hooks (Rayo, Reloj & Estiramiento reset)
 local card_play_ref = G.FUNCS.play_cards_from_highlighted
 G.FUNCS.play_cards_from_highlighted = function(e)
@@ -1356,6 +1550,29 @@ G.FUNCS.play_cards_from_highlighted = function(e)
         G.GAME.last_played_hand_cards = {}
         for _, c in ipairs(G.hand.highlighted) do
             table.insert(G.GAME.last_played_hand_cards, c)
+        end
+    end
+
+    if G.GAME and G.GAME.potion_thunderbolt_active and G.hand and G.hand.highlighted then
+        for _, c in ipairs(G.hand.highlighted) do
+            c.ability.perma_bonus = (c.ability.perma_bonus or 0) + 50
+            c.ability.mult = (c.ability.mult or 0) + 10
+            c:juice_up(0.3, 0.3)
+        end
+        G.GAME.potion_thunderbolt_active = nil
+    end
+
+    if G.GAME and G.GAME.potion_kikimore_active and G.hand and G.hand.highlighted and G.deck and G.deck.cards then
+        local played_ranks = {}
+        for _, c in ipairs(G.hand.highlighted) do
+            local id = c:get_id()
+            if id then played_ranks[id] = true end
+        end
+        for _, dc in ipairs(G.deck.cards) do
+            local did = dc:get_id()
+            if did and played_ranks[did] then
+                dc.ability.perma_bonus = (dc.ability.perma_bonus or 0) + 10
+            end
         end
     end
 

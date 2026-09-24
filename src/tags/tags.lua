@@ -506,6 +506,199 @@ SMODS.Tag {
     end
 }
 
+-- 12. Echo Tag
+SMODS.Tag {
+    key = 'echo',
+    atlas = 'witch_brew_tags',
+    pos = { x = 11, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'Echo Tag',
+        text = {
+            "The next acquired Tag",
+            "is duplicated {C:attention}2{} times"
+        }
+    },
+    apply = function(self, tag, context)
+        return false
+    end
+}
+
+-- 13. Black Market Tag
+SMODS.Tag {
+    key = 'black_market',
+    atlas = 'witch_brew_tags',
+    pos = { x = 12, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'Black Market Tag',
+        text = {
+            "Next shop contains {C:attention}2{} free",
+            "{C:dark_edition}Negative{} consumables and",
+            "rerolls cost {C:money}$0{}"
+        }
+    },
+    apply = function(self, tag, context)
+        if (context.type == 'shop_final_pass' or context.type == 'shop_start') and not (G.GAME and G.GAME.black_market_tag_active) then
+            G.GAME.black_market_tag_active = true
+            tag:yep('+', G.C.DARK_EDITION, function()
+                if G.GAME.round_resets then
+                    G.GAME.round_resets.temp_reroll_cost = 0
+                end
+                if calculate_reroll_cost then
+                    calculate_reroll_cost(true)
+                end
+                if G.shop_jokers and G.shop_jokers.cards then
+                    for i = 1, 2 do
+                        local c = create_card('Consumeables', G.shop_jokers, nil, nil, nil, nil, nil, 'black_market')
+                        c:set_edition({ negative = true }, true)
+                        c.cost = 0
+                        G.shop_jokers:emplace(c)
+                    end
+                end
+                return true
+            end)
+            tag.triggered = true
+            return true
+        elseif context.type == 'round_eval' or context.type == 'end_of_round' then
+            if G.GAME then G.GAME.black_market_tag_active = nil end
+        end
+    end
+}
+
+-- 14. Prismatic Tag
+SMODS.Tag {
+    key = 'prismatic',
+    atlas = 'witch_brew_tags',
+    pos = { x = 13, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'Prismatic Tag',
+        text = {
+            "Next round, the first {C:attention}3{} cards",
+            "drawn to hand gain a random {C:dark_edition}Edition{}"
+        }
+    },
+    apply = function(self, tag, context)
+        if context.type == 'round_start_bonus' or context.type == 'new_blind_choice' then
+            G.GAME.prismatic_tag_count = 3
+            tag:yep('+', G.C.DARK_EDITION, function()
+                return true
+            end)
+            tag.triggered = true
+            return true
+        end
+    end
+}
+
+-- 15. Adrenaline Tag
+SMODS.Tag {
+    key = 'adrenaline',
+    atlas = 'witch_brew_tags',
+    pos = { x = 14, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'Adrenaline Tag',
+        text = {
+            "Next round starts with",
+            "{C:blue}+2{} Hands and {C:red}+2{} Discards"
+        }
+    },
+    apply = function(self, tag, context)
+        if context.type == 'round_start_bonus' then
+            tag:yep('+', G.C.RED, function()
+                ease_hands_played(2)
+                ease_discard(2)
+                return true
+            end)
+            tag.triggered = true
+            return true
+        end
+    end
+}
+
+-- 16. Catalyst Tag
+SMODS.Tag {
+    key = 'catalyst',
+    atlas = 'witch_brew_tags',
+    pos = { x = 15, y = 0 },
+    min_ante = 1,
+    loc_txt = {
+        name = 'Catalyst Tag',
+        text = {
+            "Adds {C:dark_edition}Negative{} to {C:attention}1{} random",
+            "held {C:purple}Potion{} and gives {C:money}+$5{}"
+        }
+    },
+    apply = function(self, tag, context)
+        if context.type == 'immediate' or context.type == 'tag_add' or context.type == 'new_blind_choice' then
+            tag:yep('+', G.C.PURPLE, function()
+                ease_dollars(5)
+                if G.consumeables and G.consumeables.cards then
+                    local potions = {}
+                    for _, c in ipairs(G.consumeables.cards) do
+                        if c.ability and c.ability.set == 'Potion' and not (c.edition and c.edition.negative) then
+                            table.insert(potions, c)
+                        end
+                    end
+                    if #potions > 0 then
+                        local chosen = pseudorandom_element(potions, pseudoseed('catalyst_pot'))
+                        if chosen then
+                            chosen:set_edition({ negative = true }, true)
+                            chosen:juice_up(0.5, 0.5)
+                        end
+                    end
+                end
+                return true
+            end)
+            tag.triggered = true
+            return true
+        end
+    end
+}
+
+-- Echo Tag and Prismatic Tag Hooks
+local orig_add_tag = add_tag
+function add_tag(tag)
+    orig_add_tag(tag)
+    if G.GAME and G.GAME.tags and tag and tag.key ~= 'tag_Witch_brew_echo' and tag.key ~= 'echo' then
+        for i = #G.GAME.tags, 1, -1 do
+            local t = G.GAME.tags[i]
+            if t and (t.key == 'tag_Witch_brew_echo' or t.key == 'echo') and not t.triggered then
+                t:yep('+', G.C.CYAN, function()
+                    orig_add_tag(Tag(tag.key))
+                    orig_add_tag(Tag(tag.key))
+                    return true
+                end)
+                t.triggered = true
+                break
+            end
+        end
+    end
+end
+
+local orig_draw_card = draw_card
+if orig_draw_card then
+    function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+        local ret = orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+        if G.GAME and G.GAME.prismatic_tag_count and G.GAME.prismatic_tag_count > 0 and to == G.hand then
+            local drawn = card or (to and to.cards and to.cards[#to.cards])
+            if drawn and not drawn.edition then
+                local ed = poll_edition('prismatic_tag', nil, true, true)
+                if ed then
+                    drawn:set_edition(ed, true)
+                    drawn:juice_up(0.4, 0.4)
+                end
+                G.GAME.prismatic_tag_count = G.GAME.prismatic_tag_count - 1
+                if G.GAME.prismatic_tag_count <= 0 then
+                    G.GAME.prismatic_tag_count = nil
+                end
+            end
+        end
+        return ret
+    end
+end
+
 local orig_tag_generate_ui = Tag.generate_UI
 function Tag:generate_UI(_size)
     local tab, sprite = orig_tag_generate_ui(self, _size)

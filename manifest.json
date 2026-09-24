@@ -5,9 +5,7 @@
     "version_number": "2.0.6",
     "website_url": "https://github.com/Unknow1022/Witch-Brew-Expansion",
     "description": "Massive Balatro expansion featuring 57 Jokers, custom Potions & Brews with particle FX, 11 unique Tags, Job Cards, Boss Blinds, 5 Decks, CardSleeves support, and JokerDisplay integration.",
-    "dependencies": [
-        "Steamodded-Steamodded-26.829.0"
-    ],
+    "dependencies": [],
     "author": [
         "Unknow102"
     ],
