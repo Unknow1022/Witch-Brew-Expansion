@@ -21,7 +21,7 @@ SMODS.ConsumableType {
         underscores_plural = 'Potions'
     },
     shop_rate = 0.8,
-    collection_rows = { 2, 4 },
+    collection_rows = { 3, 5 },
     default = 'c_Witch_brew_potion_stretch'
 }
 
@@ -32,18 +32,31 @@ local function get_potion_particle_colours(card)
         or (card and card.config and card.config.center_key)
         or (card and card.ability and card.ability.name)
         or ''
+    key = string.lower(tostring(key))
     if string.find(key, 'amalgam', 1, true) or string.find(key, 'amalgama', 1, true) then
         return { HEX('a855f7'), HEX('ec4899'), HEX('3b82f6'), HEX('10b981'), HEX('fbbf24'), { 1, 1, 1, 0.95 } }
     elseif string.find(key, 'lightning', 1, true) or string.find(key, 'rayo', 1, true) or string.find(key, 'trueno', 1, true) then
         return { HEX('f59e0b'), HEX('fbbf24'), HEX('fef08a'), { 1, 1, 1, 0.95 } }
     elseif string.find(key, 'blizzard', 1, true) or string.find(key, 'ventisca', 1, true) or string.find(key, 'orca', 1, true) then
         return { HEX('06b6d4'), HEX('38bdf8'), HEX('67e8f9'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'fury', 1, true) or string.find(key, 'furia', 1, true) then
+        return { HEX('ef4444'), HEX('dc2626'), HEX('fca5a5'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'mercury', 1, true) or string.find(key, 'mercurio', 1, true) then
+        return { HEX('cbd5e1'), HEX('94a3b8'), HEX('f8fafc'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'mirror', 1, true) or string.find(key, 'espejo', 1, true) then
+        return { HEX('8b5cf6'), HEX('a78bfa'), HEX('c4b5fd'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'clock', 1, true) or string.find(key, 'reloj', 1, true) then
+        return { HEX('d97706'), HEX('fbbf24'), HEX('fef3c7'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'swallow', 1, true) or string.find(key, 'golondrina', 1, true) then
+        return { HEX('22c55e'), HEX('4ade80'), HEX('86efac'), HEX('fef08a'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'tawny_owl', 1, true) or string.find(key, 'lechuza', 1, true) then
+        return { HEX('2563eb'), HEX('3b82f6'), HEX('f59e0b'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'petri', 1, true) or string.find(key, 'filtro_petri', 1, true) then
+        return { HEX('7e22ce'), HEX('a855f7'), HEX('e9d5ff'), { 1, 1, 1, 0.95 } }
+    elseif string.find(key, 'golden_oriole', 1, true) or string.find(key, 'oropendola', 1, true) then
+        return { HEX('eab308'), HEX('facc15'), HEX('fef08a'), { 1, 1, 1, 0.95 } }
     elseif string.find(key, 'black_blood', 1, true) or string.find(key, 'sangre_negra', 1, true) then
-        return { HEX('991b1b'), HEX('dc2626'), HEX('450a0a'), HEX('1f2937') }
-    elseif string.find(key, 'full_moon', 1, true) or string.find(key, 'luna_llena', 1, true) or string.find(key, 'cat', 1, true) or string.find(key, 'gato', 1, true) then
-        return { HEX('8b5cf6'), HEX('c084fc'), HEX('4ade80'), { 1, 1, 1, 0.9 } }
-    elseif string.find(key, 'white_honey', 1, true) or string.find(key, 'miel_blanca', 1, true) then
-        return { HEX('fef08a'), HEX('fde047'), HEX('ffffff'), HEX('ca8a04') }
+        return { HEX('881337'), HEX('e11d48'), HEX('1e293b'), { 1, 1, 1, 0.95 } }
     else
         return { HEX('2e8b57'), HEX('50c878'), HEX('a7f3d0'), HEX('10b981'), HEX('34d399'), { 1, 1, 1, 0.9 } }
     end
@@ -183,14 +196,18 @@ SMODS.Consumable {
     atlas = 'witch_brew_potions',
     pos = { x = 1, y = 0 },
     cost = 4,
+    config = { extra = { odds = 5 } },
     loc_txt = {
         name = 'Lightning Potion',
         text = {
             "Cards played in your next hand gain a",
-            "{C:attention}random enhancement{}, with a {C:green}1 in 5{} chance",
-            "to be destroyed when scoring ends"
+            "{C:attention}random enhancement{}, with a {C:green}#1# in #2#{} chance",
+            "to be destroyed after scoring ends"
         }
     },
+    loc_vars = function(self, info_queue, card)
+        return { vars = { (G.GAME and G.GAME.probabilities.normal) or 1, (card and card.ability and card.ability.extra and card.ability.extra.odds) or 5 } }
+    end,
     can_use = function(self, card)
         return G.STATE == G.STATES.SELECTING_HAND
     end,
@@ -1099,6 +1116,239 @@ SMODS.Consumable {
     end
 }
 
+-- 9. Swallow Potion
+SMODS.Consumable {
+    key = 'potion_swallow',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 3, y = 1 },
+    cost = 4,
+    config = { extra = { max_cards = 2, money = 5 } },
+    loc_txt = {
+        name = 'Swallow Potion',
+        text = {
+            "Enhances up to {C:attention}#1#{} selected cards",
+            "into {C:attention}Lucky Cards{}, and grants",
+            "{C:money}+$#2#{} immediately"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { extra.max_cards or 2, extra.money or 5 } }
+    end,
+    can_use = function(self, card)
+        return G.hand and G.hand.highlighted and #G.hand.highlighted >= 1 and #G.hand.highlighted <= 2
+    end,
+    use = function(self, card, area, copier)
+        local targets = {}
+        for _, c in ipairs(G.hand.highlighted) do
+            table.insert(targets, c)
+        end
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot1')
+                card:juice_up(0.4, 0.5)
+                for _, target in ipairs(targets) do
+                    target:set_ability(G.P_CENTERS.m_lucky)
+                    target:juice_up(0.3, 0.3)
+                end
+                ease_dollars((card.ability and card.ability.extra and card.ability.extra.money) or 5)
+                if G.hand then G.hand:unhighlight_all() end
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Swallow!', colour = G.C.GREEN })
+                return true
+            end
+        }))
+    end
+}
+
+-- 10. Tawny Owl Potion
+SMODS.Consumable {
+    key = 'potion_tawny_owl',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 4, y = 1 },
+    cost = 4,
+    config = { extra = { hands = 1, discards = 2, hand_size = 1 } },
+    loc_txt = {
+        name = 'Tawny Owl Potion',
+        text = {
+            "Grants {C:blue}+#1# Hand{} and {C:red}+#2# Discards{}",
+            "for this round, and {C:attention}+#3#{} hand size",
+            "for the rest of the blind"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { extra.hands or 1, extra.discards or 2, extra.hand_size or 1 } }
+    end,
+    can_use = function(self, card)
+        return G.STATE == G.STATES.SELECTING_HAND
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot1')
+                card:juice_up(0.4, 0.5)
+                ease_hands_played((card.ability and card.ability.extra and card.ability.extra.hands) or 1)
+                ease_discard((card.ability and card.ability.extra and card.ability.extra.discards) or 2)
+                local hs = (card.ability and card.ability.extra and card.ability.extra.hand_size) or 1
+                if G.hand and G.hand.change_size then
+                    G.hand:change_size(hs)
+                end
+                G.GAME.potion_tawny_owl_active = (G.GAME.potion_tawny_owl_active or 0) + hs
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Tawny Owl!', colour = G.C.BLUE })
+                return true
+            end
+        }))
+    end
+}
+
+-- 11. Petri's Philter
+SMODS.Consumable {
+    key = 'potion_petri',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 0, y = 2 },
+    cost = 4,
+    config = { extra = { levels = 2 } },
+    loc_txt = {
+        name = "Petri's Philter",
+        text = {
+            "Increases the level of your",
+            "{C:attention}most played poker hand{}",
+            "by {C:attention}+#1# levels{}"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { extra.levels or 2 } }
+    end,
+    can_use = function(self, card)
+        return true
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot2')
+                card:juice_up(0.5, 0.6)
+                local chosen_hand = 'High Card'
+                local max_played = -1
+                if G.GAME and G.GAME.hands then
+                    for handname, handinfo in pairs(G.GAME.hands) do
+                        if handinfo.played and handinfo.played > max_played and handinfo.visible then
+                            max_played = handinfo.played
+                            chosen_hand = handname
+                        end
+                    end
+                end
+                level_up_hand(card, chosen_hand, nil, (card.ability and card.ability.extra and card.ability.extra.levels) or 2)
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Level Up!', colour = G.C.PURPLE })
+                return true
+            end
+        }))
+    end
+}
+
+-- 12. Golden Oriole Potion
+SMODS.Consumable {
+    key = 'potion_golden_oriole',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 1, y = 2 },
+    cost = 5,
+    config = { extra = { money = 6 } },
+    loc_txt = {
+        name = 'Golden Oriole Potion',
+        text = {
+            "Disables the current {C:attention}Boss Blind{}",
+            "ability and earns {C:money}+$#1#{}",
+            "{C:inactive}(Can only be used during Boss Blind){}"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { extra.money or 6 } }
+    end,
+    can_use = function(self, card)
+        return G.GAME and G.GAME.blind and G.GAME.blind.boss and not G.GAME.blind.disabled
+    end,
+    use = function(self, card, area, copier)
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot2')
+                card:juice_up(0.5, 0.6)
+                if G.GAME and G.GAME.blind and G.GAME.blind.disable then
+                    G.GAME.blind:disable()
+                end
+                ease_dollars((card.ability and card.ability.extra and card.ability.extra.money) or 6)
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Oriole!', colour = G.C.GOLD })
+                return true
+            end
+        }))
+    end
+}
+
+-- 13. Black Blood Potion
+SMODS.Consumable {
+    key = 'potion_black_blood',
+    set = 'Potion',
+    atlas = 'witch_brew_potions',
+    pos = { x = 2, y = 2 },
+    cost = 5,
+    config = { extra = { max_cards = 2 } },
+    loc_txt = {
+        name = 'Black Blood Potion',
+        text = {
+            "Enhances up to {C:attention}#1#{} selected cards",
+            "into {C:attention}Glass Cards{}, and adds a",
+            "random {C:dark_edition}Edition{} to one of them"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { extra.max_cards or 2 } }
+    end,
+    can_use = function(self, card)
+        return G.hand and G.hand.highlighted and #G.hand.highlighted >= 1 and #G.hand.highlighted <= 2
+    end,
+    use = function(self, card, area, copier)
+        local targets = {}
+        for _, c in ipairs(G.hand.highlighted) do
+            table.insert(targets, c)
+        end
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function()
+                play_sound('tarot2')
+                card:juice_up(0.5, 0.6)
+                for _, target in ipairs(targets) do
+                    target:set_ability(G.P_CENTERS.m_glass)
+                    target:juice_up(0.3, 0.3)
+                end
+                local chosen_card = pseudorandom_element(targets, pseudoseed('black_blood_ed'))
+                if chosen_card then
+                    local ed = poll_edition('black_blood_edition', nil, true, true)
+                    if ed then
+                        chosen_card:set_edition(ed, true)
+                    end
+                end
+                if G.hand then G.hand:unhighlight_all() end
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Black Blood!', colour = G.C.DARK_EDITION })
+                return true
+            end
+        }))
+    end
+}
+
 -- Potion Engine Hooks (Rayo, Reloj & Estiramiento reset)
 local card_play_ref = G.FUNCS.play_cards_from_highlighted
 G.FUNCS.play_cards_from_highlighted = function(e)
@@ -1114,7 +1364,8 @@ G.FUNCS.play_cards_from_highlighted = function(e)
         for _, c in ipairs(G.hand.highlighted) do
             local chosen_enh = pseudorandom_element(enhs, pseudoseed('potion_rayo_enh'))
             c:set_ability(chosen_enh)
-            if pseudorandom('potion_rayo_destroy') < 0.2 then
+            local odds = ((G.GAME and G.GAME.probabilities.normal) or 1) / 5
+            if pseudorandom('potion_rayo_destroy') < odds then
                 c.potion_rayo_destruct = true
             end
         end
@@ -1134,19 +1385,35 @@ G.FUNCS.play_cards_from_highlighted = function(e)
     end
 end
 
--- Hook scoring completion to dissolve rayo destruct cards
-local eval_card_ref = G.FUNCS.evaluate_play
-if eval_card_ref then
-    G.FUNCS.evaluate_play = function(e)
-        eval_card_ref(e)
+-- Hook scoring completion to dissolve rayo destruct cards AFTER scoring has finished
+local orig_draw_from_play_to_discard = G.FUNCS.draw_from_play_to_discard
+if orig_draw_from_play_to_discard then
+    G.FUNCS.draw_from_play_to_discard = function(e)
+        local destroyed_cards = {}
         if G.play and G.play.cards then
             for _, c in ipairs(G.play.cards) do
                 if c.potion_rayo_destruct then
                     c.potion_rayo_destruct = nil
-                    c:start_dissolve()
+                    c.destroyed = true
+                    table.insert(destroyed_cards, c)
                 end
             end
         end
+        if #destroyed_cards > 0 then
+            for _, c in ipairs(destroyed_cards) do
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'immediate',
+                    func = function()
+                        c:start_dissolve()
+                        return true
+                    end
+                }))
+            end
+            for j = 1, #G.jokers.cards do
+                eval_card(G.jokers.cards[j], { cardarea = G.jokers, remove_playing_cards = true, removed = destroyed_cards })
+            end
+        end
+        orig_draw_from_play_to_discard(e)
     end
 end
 
@@ -1212,6 +1479,12 @@ if end_round then
             end
         end
         if G.GAME then
+            if G.GAME.potion_tawny_owl_active and G.GAME.potion_tawny_owl_active > 0 then
+                if G.hand and G.hand.change_size then
+                    G.hand:change_size(-G.GAME.potion_tawny_owl_active)
+                end
+                G.GAME.potion_tawny_owl_active = nil
+            end
             G.GAME.potion_mercury_active = nil
             G.GAME.potion_mercurio_active = nil
             G.GAME.potion_mirror_active = nil
@@ -1777,6 +2050,11 @@ if G and G.P_CENTERS then
         ['c_Witch_brew_potion_mercurio'] = 'c_Witch_brew_potion_mercury',
         ['c_Witch_brew_potion_espejo'] = 'c_Witch_brew_potion_mirror',
         ['c_Witch_brew_potion_reloj'] = 'c_Witch_brew_potion_clock',
+        ['c_Witch_brew_potion_golondrina'] = 'c_Witch_brew_potion_swallow',
+        ['c_Witch_brew_potion_lechuza'] = 'c_Witch_brew_potion_tawny_owl',
+        ['c_Witch_brew_potion_filtro_petri'] = 'c_Witch_brew_potion_petri',
+        ['c_Witch_brew_potion_oropendola'] = 'c_Witch_brew_potion_golden_oriole',
+        ['c_Witch_brew_potion_sangre_negra'] = 'c_Witch_brew_potion_black_blood',
     }
     for old_k, new_k in pairs(potion_aliases) do
         if G.P_CENTERS[new_k] and not G.P_CENTERS[old_k] then

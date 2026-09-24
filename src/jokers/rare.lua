@@ -1055,7 +1055,7 @@ SMODS.Joker {
         text = {
             "Each scored {C:attention}Gold Card{}",
             "gives {X:mult,C:white}X#1#{} Mult",
-            "{C:inactive}(\"24 karat magic in the air\"){}"
+            "{C:inactive}('24 karat magic in the air'){}"
         }
     },
     loc_vars = function(self, info_queue, card)
@@ -1152,20 +1152,20 @@ SMODS.Joker {
     loc_txt = {
         name = 'Meteorologist',
         text = {
-            "{C:mult}X3{} Mult. Each blind has a random",
+            "{X:mult,C:white}X#1#{} Mult. Each blind has a random",
             "{C:attention}Weather{}:",
             "Storm(+Mult,-1 hand), Sun(+1 hand,-Mult),",
             "Fog(hidden cards), Hail(random debuff)"
         }
     },
-    config = { extra = { weather = '', weathers_seen = {} } },
+    config = { extra = { xmult = 3, weather = '', weathers_seen = {} } },
     rarity = 3,
     pos = { x = 2, y = 9 },
     cost = 8,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability.extra) or self.config.extra
-        return { vars = { ex.weather or '?' } }
+        return { vars = { ex.xmult or 3, ex.weather or '?' } }
     end,
     check_for_unlock = function(self, args)
         if G.GAME and G.GAME.witch_brew_weathers_seen then
@@ -1542,9 +1542,9 @@ SMODS.Joker {
         name = 'Entomologist',
         text = {
             "Each hand played, a scored card",
-            "gets an {C:attention}Insect token{}.",
-            "Beetle:{C:chips}+40 Chips{}, Butterfly:{C:attention}retrigger 1x{},",
-            "Firefly:{C:mult}+10 Mult{}, Spider:{C:chips}+15 Chips{} matching suit"
+            "gets a random {C:attention}Insect token{}:",
+            "{C:attention}Beetle{}: {C:chips}+40{} Chips | {C:attention}Firefly{}: {C:mult}+10{} Mult",
+            "{C:attention}Butterfly{}: {C:attention}retrigger 1x{} | {C:attention}Spider{}: {C:chips}+15{} Chips"
         }
     },
     config = { extra = { blinds_beaten = 0 } },

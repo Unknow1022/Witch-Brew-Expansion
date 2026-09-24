@@ -278,7 +278,7 @@ SMODS.Joker {
         name = 'Runway',
         text = {
             "Gains {X:mult,C:white}+X#2#{} Mult whenever",
-            "a card is {C:enhanced}Enhanced{}",
+            "a card is {C:attention}Enhanced{}",
             "{C:inactive}(Currently {X:mult,C:white}X#1#{C:inactive} Mult){}"
         }
     },
@@ -1222,7 +1222,7 @@ SMODS.Joker {
             "If played hand contains both a",
             "{C:attention}King{} and a {C:attention}Queen{}, create a",
             "{C:dark_edition}Polychrome{} {C:attention}Wild Jack{} in hand",
-            "{C:inactive}(\"The kid is not my son\"){}"
+            "{C:inactive}('The kid is not my son'){}"
         }
     },
     loc_vars = function(self, info_queue, card)
@@ -1384,7 +1384,7 @@ SMODS.Joker {
         name = 'Inheritance',
         text = {
             "When a Joker is {C:attention}sold{},",
-            "gain {C:mult}+Mult{} equal to {C:attention}2X{} its sell value.",
+            "permanently gain {C:mult}+Mult{} equal to {C:attention}2X{} its {C:money}sell value{}",
             "{C:inactive}(Currently {C:mult}+#1#{} Mult){}"
         }
     },

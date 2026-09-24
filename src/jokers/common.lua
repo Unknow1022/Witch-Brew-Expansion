@@ -285,7 +285,7 @@ SMODS.Joker {
         text = {
             "Reduces required {C:attention}Boss Blind{} score by {C:attention}50%{},",
             "{C:red}-1{} Discard during the Boss Blind",
-            "{C:inactive}(\"No one wants to be defeated\"){}"
+            "{C:inactive}('No one wants to be defeated'){}"
         }
     },
     loc_vars = function(self, info_queue, card)
@@ -461,17 +461,18 @@ SMODS.Joker {
         text = {
             "Counter starts at {C:attention}#1#{}.",
             "Each card played reduces it by {C:attention}1{}.",
-            "Hit exactly {C:attention}0{} → {X:mult,C:white}X3{} Mult.",
+            "Hit exactly {C:attention}0{} → {X:mult,C:white}X#2#{} Mult.",
             "Exceed 0 → counter {C:attention}resets{}"
         }
     },
-    config = { extra = { counter = 10, cards_this_blind = 0, triggered = false } },
+    config = { extra = { counter = 10, xmult = 3, cards_this_blind = 0, triggered = false } },
     rarity = 1,
     pos = { x = 3, y = 6 },
     cost = 5,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
-        return { vars = { (card and card.ability.extra.counter) or 10 } }
+        local ex = (card and card.ability and card.ability.extra) or self.config.extra
+        return { vars = { ex.counter or 10, ex.xmult or 3 } }
     end,
     check_for_unlock = function(self, args)
         if G.GAME and G.GAME.witch_brew_countdown_cards and G.GAME.witch_brew_countdown_cards >= 10 then
@@ -666,7 +667,7 @@ SMODS.Joker {
             "Each round not won in {C:attention}1 hand{},",
             "lose {C:money}$2{} {C:inactive}(cumulative: -$#1#{}){}.",
             "Win in exactly {C:attention}1 hand{} →",
-            "recover all debt {C:money}X1.5{}"
+            "recover all debt {C:attention}X1.5{}"
         }
     },
     config = { extra = { debt = 0, hands_played = 0 } },
