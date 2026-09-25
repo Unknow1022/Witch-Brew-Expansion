@@ -315,8 +315,44 @@ local function init_witch_brew_localization()
 
     apply_witch_brew_language()
 
+    -- Immunity to automatic translation functions for all Witcher Brew items
+    if protect_witch_brew_from_auto_translation then
+        protect_witch_brew_from_auto_translation()
+    end
+
     if alias_all_witch_brew_centers then
         alias_all_witch_brew_centers()
+    end
+end
+
+-- Protect Witcher Brew centers, jokers, consumables, and objects from automatic translation
+function protect_witch_brew_from_auto_translation()
+    if not G.localization or not G.localization.descriptions then return end
+    if G.P_CENTERS then
+        for k, v in pairs(G.P_CENTERS) do
+            local str = tostring(k)
+            if (string.find(str, 'witch_brew', 1, true) or string.find(str, 'Witch_brew', 1, true)) and v.loc_txt then
+                local set_name = v.set or 'Joker'
+                G.localization.descriptions[set_name] = G.localization.descriptions[set_name] or {}
+                local entry = G.localization.descriptions[set_name][k]
+                if entry then
+                    if v.loc_txt.name then entry.name = v.loc_txt.name end
+                    if v.loc_txt.text then entry.text = v.loc_txt.text end
+                    reparse_localization_entry(entry)
+                end
+            end
+        end
+    end
+end
+
+if type(auto_translate) == 'function' then
+    local _orig_auto_trans = auto_translate
+    auto_translate = function(text, key, ...)
+        local str = tostring(key or '')
+        if string.find(str, 'witch_brew', 1, true) or string.find(str, 'Witch_brew', 1, true) then
+            return text
+        end
+        return _orig_auto_trans(text, key, ...)
     end
 end
 
@@ -379,7 +415,7 @@ local function build_witch_brew_config_tab()
                                     {
                                         n = G.UIT.T,
                                         config = {
-                                            text = "v2.1.4",
+                                            text = "v2.2.0",
                                             scale = 0.22,
                                             colour = G.C.WHITE
                                         }

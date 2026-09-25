@@ -920,9 +920,9 @@ SMODS.Joker {
     loc_txt = {
         name = 'Upgrade Roulette',
         text = {
-            "End of each blind: a {C:attention}random card{}",
-            "gains the next enhancement tier",
-            "{C:inactive}(Base→Bonus→Mult→Wild→Lucky→Glass→Steel→Gold){}"
+            "When an {C:attention}enhanced card{} is played,",
+            "it advances to the next enhancement tier",
+            "{C:inactive}(Bonus→Mult→Wild→Lucky→Steel→Gold→Glass){}"
         }
     },
     config = { extra = {} },
@@ -931,36 +931,29 @@ SMODS.Joker {
     cost = 5,
     blueprint_compat = false,
     calculate = function(self, card, context)
-        if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
-            local chain = { 'm_bonus', 'm_mult', 'm_wild', 'm_lucky', 'm_glass', 'm_steel', 'm_gold' }
+        if context.before and not context.blueprint and context.scoring_hand then
+            local chain = { 'm_bonus', 'm_mult', 'm_wild', 'm_lucky', 'm_steel', 'm_gold', 'm_glass' }
             local function get_next(c)
                 local cur = c.config and c.config.center and c.config.center.key
-                if not cur or cur == 'c_base' then return 'm_bonus' end
+                if not cur or cur == 'c_base' then return nil end
+                if cur == 'm_stone' then return 'm_steel' end
                 for i, k in ipairs(chain) do
                     if k == cur then return chain[i + 1] end
                 end
                 return nil
             end
-            local candidates = {}
-            if G.playing_cards then
-                for _, c in ipairs(G.playing_cards) do
-                    if get_next(c) then candidates[#candidates + 1] = c end
+
+            local upgraded = false
+            for _, c in ipairs(context.scoring_hand) do
+                local nxt = get_next(c)
+                if nxt and G.P_CENTERS[nxt] and not c.debuff then
+                    c:set_ability(G.P_CENTERS[nxt])
+                    c:juice_up(0.4, 0.4)
+                    upgraded = true
                 end
             end
-            if #candidates > 0 then
-                local target = pseudorandom_element(candidates, pseudoseed('ruleta_mejoras'))
-                local nxt = get_next(target)
-                if nxt and G.P_CENTERS[nxt] then
-                    G.E_MANAGER:add_event(Event({
-                        func = function()
-                            target:set_ability(G.P_CENTERS[nxt])
-                            target:juice_up(0.5, 0.5)
-                            card:juice_up(0.3, 0.3)
-                            return true
-                        end
-                    }))
-                    return { message = 'Upgraded!', colour = G.C.SECONDARY_SET.Enhanced, card = card }
-                end
+            if upgraded then
+                return { message = 'Upgraded!', colour = G.C.SECONDARY_SET.Enhanced, card = card }
             end
         end
     end

@@ -519,39 +519,11 @@ jd_def["j_Witch_brew_falta_de_lectura_joker"] = {
 -- 15. Chameleon Joker
 jd_def["j_Witch_brew_chameleon_joker"] = {
     text = {
-        { text = "(" },
-        { ref_table = "card.ability.extra", ref_value = "required_rank", colour = G.C.ATTENTION },
-        { text = ")" }
+        { text = "Copy Blind Tag", colour = G.C.PURPLE }
     },
-    calc_function = function(card)
-        local req = card.ability and card.ability.extra and card.ability.extra.required_rank or 'Ace'
-        local has_rank = false
-        local text, _, scoring_hand = JokerDisplay.evaluate_hand()
-        local pool = (text ~= 'Unknown' and scoring_hand) or (G.hand and G.hand.highlighted) or {}
-        for _, c in ipairs(pool) do
-            local val = c.base and c.base.value
-            if val == req or tostring(c:get_id()) == tostring(req) then
-                has_rank = true
-                break
-            end
-        end
-
-        if has_rank then
-            local copied_joker, copied_debuff = JokerDisplay.calculate_blueprint_copy(card)
-            JokerDisplay.copy_display(card, copied_joker, copied_debuff)
-        else
-            JokerDisplay.copy_display(card, nil)
-        end
-    end,
-    get_blueprint_joker = function(card)
-        if not G.jokers or not G.jokers.cards then return nil end
-        for i = 1, #G.jokers.cards do
-            if G.jokers.cards[i] == card then
-                return G.jokers.cards[i - 1]
-            end
-        end
-        return nil
-    end
+    reminder_text = {
+        { text = "(50% 2x)" }
+    }
 }
 
 -- 16. Motorized Joker
@@ -1684,10 +1656,10 @@ jd_def["j_Witch_brew_reading_deficiency_joker"] = jd_def["j_Witch_brew_falta_de_
 -- Billie Jean
 jd_def["j_Witch_brew_billie_jean"] = {
     text = {
-        { text = "+1 Wild Jack", colour = G.C.DARK_EDITION }
+        { text = "1/3 Moonwalk", colour = HEX('d4af37') }
     },
     reminder_text = {
-        { text = "(King & Queen)" }
+        { text = "(Reverse Scoring)" }
     }
 }
 
@@ -1697,7 +1669,7 @@ jd_def["j_Witch_brew_temporal_rift"] = {
         { text = "Rewind Defeat", colour = G.C.ORANGE }
     },
     reminder_text = {
-        { text = "(1 Charge)" }
+        { text = "(Single Use)" }
     }
 }
 
@@ -1730,11 +1702,17 @@ jd_def["j_Witch_brew_inheritance"] = {
 -- Ecosystem
 jd_def["j_Witch_brew_ecosystem"] = {
     text = {
-        { text = "X1.5 / +80 Chips", colour = G.C.XMULT }
+        { ref_table = "card.joker_display_values", ref_value = "eco_str" }
     },
     reminder_text = {
-        { text = "(Dominant/Rarest Suit)" }
-    }
+        { text = "(Dom X1.5 / Rare +80)" }
+    },
+    calc_function = function(card)
+        local ex = card.ability and card.ability.extra or {}
+        local dom = ex.dominant and ex.dominant ~= '' and ex.dominant or '?'
+        local rare = ex.rarest and ex.rarest ~= '' and ex.rarest or '?'
+        card.joker_display_values.eco_str = dom .. " / " .. rare
+    end
 }
 
 -- Auctioneer
@@ -1877,10 +1855,11 @@ jd_def["j_Witch_brew_mad_clockmaker"] = {
 -- Catalyst
 jd_def["j_Witch_brew_catalyst"] = {
     text = {
-        { text = "X2.5", colour = G.C.XMULT }
+        { text = "1/3 " },
+        { text = "Retrigger + X2.5", colour = G.C.XMULT }
     },
     reminder_text = {
-        { text = "(Random Joker Boost)" }
+        { text = "(Random Joker)" }
     }
 }
 
@@ -1949,31 +1928,46 @@ jd_def["j_Witch_brew_world_devourer"] = {
 -- Living Paradox (Legendary)
 jd_def["j_Witch_brew_living_paradox"] = {
     text = {
-        { ref_table = "card.joker_display_values", ref_value = "state_str" }
+        { ref_table = "card.joker_display_values", ref_value = "next_str", colour = G.C.DARK_EDITION }
     },
     reminder_text = {
-        { text = "(Quantum Collapse)" }
+        { text = "(Next Boss Negative)" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
-        local st = ex.state or 'A'
-        card.joker_display_values.state_str = "State " .. st
+        local name = "Random"
+        if ex.next_joker and G.P_CENTERS and G.P_CENTERS[ex.next_joker] then
+            local center = G.P_CENTERS[ex.next_joker]
+            name = (localize and localize{type = 'name_text', key = center.key, set = 'Joker'}) or center.name or ex.next_joker
+        end
+        card.joker_display_values.next_str = name
     end
 }
 
 -- Star Chronicler (Legendary)
 jd_def["j_Witch_brew_star_chronicler"] = {
     text = {
-        { ref_table = "card.joker_display_values", ref_value = "stars_str" }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult" }
+            }
+        }
     },
     reminder_text = {
-        { text = "(Constellation)" }
+        { text = "(Planets & Black Holes)" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
-        local st = ex.stars or 0
-        local max_st = ex.max_stars or 7
-        card.joker_display_values.stars_str = st .. "/" .. max_st .. " Stars"
+        local planet_count = 0
+        if G.P_CENTER_POOLS and G.P_CENTER_POOLS.Planet then
+            for _, p in ipairs(G.P_CENTER_POOLS.Planet) do
+                if p.discovered then planet_count = planet_count + 1 end
+            end
+        end
+        local base_xm = 1 + planet_count * (ex.xmult_per_planet or 0.5)
+        local total_xm = base_xm * (ex.black_hole_mult or 1)
+        card.joker_display_values.x_mult = string.format('%.1f', total_xm)
     end
 }
 

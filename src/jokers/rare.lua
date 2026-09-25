@@ -1165,6 +1165,92 @@ SMODS.Joker {
     end
 }
 
+-- Meteorologist Weather HUD Indicator under Consumables
+local function get_weather_hud_config(w)
+    if w == 'Storm' then
+        return "Storm (+0.5X / -1 Hand)", HEX('c0392b')
+    elseif w == 'Sun' then
+        return "Sun (-0.5X / +1 Hand)", HEX('f39c12')
+    elseif w == 'Fog' then
+        return "Fog (Cards Face Down)", HEX('7f8c8d')
+    elseif w == 'Hail' then
+        return "Hail (Debuff)", HEX('2980b9')
+    else
+        return "Clear (X3 Mult)", HEX('27ae60')
+    end
+end
+
+local function create_meteorologist_hud(cur_weather)
+    if not (G.consumeables and G.consumeables.T) then return end
+    if G.HUD_meteorologist and not G.HUD_meteorologist.REMOVED then
+        G.HUD_meteorologist:remove()
+        G.HUD_meteorologist = nil
+    end
+
+    local text_str, col = get_weather_hud_config(cur_weather)
+    local t = {
+        n = G.UIT.ROOT,
+        config = { align = "cm", padding = 0, colour = G.C.CLEAR },
+        nodes = {
+            {
+                n = G.UIT.C,
+                config = {
+                    id = 'meteorologist_weather_hud',
+                    align = "cm",
+                    minh = 0.38,
+                    minw = 1.45,
+                    padding = 0.05,
+                    r = 0.1,
+                    colour = col,
+                    shadow = true
+                },
+                nodes = {
+                    {
+                        n = G.UIT.R,
+                        config = { align = "cm", maxw = 2.4 },
+                        nodes = {
+                            { n = G.UIT.T, config = { text = text_str, scale = 0.30, colour = G.C.UI.TEXT_LIGHT, shadow = true } }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    G.HUD_meteorologist = UIBox{
+        definition = t,
+        config = {
+            align = "bm",
+            offset = { x = 0, y = 0.65 },
+            major = G.consumeables,
+            bond = 'Weak'
+        }
+    }
+    G.HUD_meteorologist._last_weather = cur_weather
+end
+
+if Game and Game.update then
+    local orig_game_update_met = Game.update
+    function Game:update(dt)
+        orig_game_update_met(self, dt)
+        if G.STAGE == G.STAGES.RUN and G.consumeables then
+            local met_jokers = (find_joker and find_joker('meteorologist')) or (SMODS and SMODS.find_card and SMODS.find_card('j_Witch_brew_meteorologist')) or {}
+            if #met_jokers > 0 then
+                local cur_w = (met_jokers[1].ability and met_jokers[1].ability.extra and met_jokers[1].ability.extra.weather) or ''
+                if not G.HUD_meteorologist or G.HUD_meteorologist.REMOVED or G.HUD_meteorologist._last_weather ~= cur_w then
+                    create_meteorologist_hud(cur_w)
+                end
+            elseif G.HUD_meteorologist then
+                G.HUD_meteorologist:remove()
+                G.HUD_meteorologist = nil
+            end
+        elseif G.HUD_meteorologist then
+            G.HUD_meteorologist:remove()
+            G.HUD_meteorologist = nil
+        end
+    end
+end
+
 -- Meteorologist, Rare Joker
 SMODS.Joker {
     key = 'meteorologist',
@@ -1174,10 +1260,10 @@ SMODS.Joker {
     loc_txt = {
         name = 'Meteorologist',
         text = {
-            "{X:mult,C:white}X#1#{} Mult. Each blind has a random",
-            "{C:attention}Weather{}:",
-            "Storm(+Mult,-1 hand), Sun(+1 hand,-Mult),",
-            "Fog(hidden cards), Hail(random debuff)"
+            "{X:mult,C:white}X#1#{} Mult. Each blind starts with a random {C:attention}Weather{}:",
+            "{C:attention}Storm{} (+0.5X Mult, -1 hand), {C:attention}Sun{} (-0.5X Mult, +1 hand),",
+            "{C:attention}Fog{} (draws card face down), {C:attention}Hail{} (debuffs random card).",
+            "{C:inactive}(Current: {C:attention}#2#{C:inactive}){}"
         }
     },
     config = { extra = { xmult = 3, weather = '', weathers_seen = {} } },
@@ -1187,7 +1273,8 @@ SMODS.Joker {
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability.extra) or self.config.extra
-        return { vars = { ex.xmult or 3, ex.weather or '?' } }
+        local w = (ex.weather and ex.weather ~= '' and ex.weather) or 'Clear'
+        return { vars = { ex.xmult or 3, w } }
     end,
     check_for_unlock = function(self, args)
         if G.GAME and G.GAME.witch_brew_weathers_seen then
@@ -1201,6 +1288,7 @@ SMODS.Joker {
             local weathers = { 'Storm', 'Sun', 'Fog', 'Hail' }
             local w = pseudorandom_element(weathers, pseudoseed('meteorologist_'..tostring(G.GAME.round or 0)))
             card.ability.extra.weather = w
+            if create_meteorologist_hud then create_meteorologist_hud(w) end
             -- Track for unlock
             G.GAME.witch_brew_weathers_seen = G.GAME.witch_brew_weathers_seen or {}
             G.GAME.witch_brew_weathers_seen[w] = true
@@ -1259,6 +1347,11 @@ SMODS.Joker {
                 return { x_mult = base_xmult, card = card }
             end
         end
+
+        if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
+            card.ability.extra.weather = ''
+            if create_meteorologist_hud then create_meteorologist_hud('') end
+        end
     end
 }
 
@@ -1308,10 +1401,10 @@ SMODS.Joker {
     loc_txt = {
         name = 'Catalyst',
         text = {
-            "{C:green}#1# in #2#{} chance to {C:attention}empower{}",
-            "a random Joker, granting",
-            "{X:mult,C:white}X#3#{} Mult this hand",
-            "{C:inactive}(Empowered: #4#){}"
+            "{C:green}#1# in #2#{} chance to retrigger a",
+            "random {C:attention}Joker{} and grant",
+            "{X:mult,C:white}X#3#{} Mult if activated",
+            "{C:inactive}(Retriggered: #4#){}"
         }
     },
     config = { extra = { odds = 3, x_mult = 2.5, target_name = 'None' } },
@@ -1340,22 +1433,32 @@ SMODS.Joker {
                 local others = {}
                 if G.jokers and G.jokers.cards then
                     for _, jk in ipairs(G.jokers.cards) do
-                        if jk ~= card then others[#others + 1] = jk end
+                        if jk ~= card and is_joker_copiable(jk) then others[#others + 1] = jk end
                     end
                 end
+                local xm = (card.ability and card.ability.extra and card.ability.extra.x_mult) or 2.5
                 if #others > 0 then
                     local target = pseudorandom_element(others, pseudoseed('catalyst_target'))
                     card.ability.extra.target_name = target.config and target.config.center and target.config.center.name or 'Joker'
                     target:juice_up(0.5, 0.5)
+                    local ret = SMODS.blueprint_effect(card, target, context)
+                    if ret and type(ret) == 'table' then
+                        local merged = {}
+                        for k, v in pairs(ret) do merged[k] = v end
+                        local base_xm = merged.x_mult or merged.Xmult or 1
+                        merged.x_mult = base_xm * xm
+                        merged.card = card
+                        merged.message = 'Catalyzed! X' .. xm
+                        return merged
+                    end
+                    return {
+                        x_mult = xm,
+                        card = card,
+                        message = 'Catalyzed! X' .. xm
+                    }
                 else
-                    card.ability.extra.target_name = 'Self'
+                    card.ability.extra.target_name = 'None'
                 end
-                local xm = (card.ability and card.ability.extra and card.ability.extra.x_mult) or 2.5
-                return {
-                    x_mult = xm,
-                    card = card,
-                    message = 'Catalyzed! X' .. xm
-                }
             end
         end
         if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
@@ -1554,6 +1657,117 @@ SMODS.Joker {
     end
 }
 
+-- Entomologist Insect Stickers Atlas & Definitions
+SMODS.Atlas {
+    key = "insect_stickers",
+    path = "insect_stickers.png",
+    px = 71,
+    py = 95
+}
+
+SMODS.Sticker {
+    key = "insect_beetle",
+    atlas = "insect_stickers",
+    pos = { x = 0, y = 0 },
+    badge_colour = HEX('8b5a2b'),
+    prefix_config = { key = false },
+    sets = { Default = true, Enhanced = true },
+    rate = 0,
+    needs_enable_flag = false,
+    loc_txt = {
+        name = 'Beetle',
+        label = 'Beetle',
+        text = {
+            "{C:chips}+40{} Chips when scored"
+        }
+    },
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play then
+            return { chips = 40, card = card }
+        end
+    end
+}
+
+SMODS.Sticker {
+    key = "insect_butterfly",
+    atlas = "insect_stickers",
+    pos = { x = 1, y = 0 },
+    badge_colour = HEX('9b59b6'),
+    prefix_config = { key = false },
+    sets = { Default = true, Enhanced = true },
+    rate = 0,
+    needs_enable_flag = false,
+    loc_txt = {
+        name = 'Butterfly',
+        label = 'Butterfly',
+        text = {
+            "{C:attention}Retrigger{} this card",
+            "{C:attention}1{} additional time"
+        }
+    },
+    calculate = function(self, card, context)
+        if context.repetition and context.cardarea == G.play then
+            return { repetitions = 1, card = card }
+        end
+    end
+}
+
+SMODS.Sticker {
+    key = "insect_firefly",
+    atlas = "insect_stickers",
+    pos = { x = 2, y = 0 },
+    badge_colour = HEX('e67e22'),
+    prefix_config = { key = false },
+    sets = { Default = true, Enhanced = true },
+    rate = 0,
+    needs_enable_flag = false,
+    loc_txt = {
+        name = 'Firefly',
+        label = 'Firefly',
+        text = {
+            "{C:mult}+10{} Mult when scored"
+        }
+    },
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play then
+            return { mult = 10, card = card }
+        end
+    end
+}
+
+SMODS.Sticker {
+    key = "insect_spider",
+    atlas = "insect_stickers",
+    pos = { x = 3, y = 0 },
+    badge_colour = HEX('34495e'),
+    prefix_config = { key = false },
+    sets = { Default = true, Enhanced = true },
+    rate = 0,
+    needs_enable_flag = false,
+    loc_txt = {
+        name = 'Spider',
+        label = 'Spider',
+        text = {
+            "{C:chips}+15{} Chips for each scored card",
+            "sharing this card's suit"
+        }
+    },
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play then
+            local suit = card.base and card.base.suit
+            local bonus = 0
+            if context.scoring_hand then
+                for _, sc in ipairs(context.scoring_hand) do
+                    if sc ~= card and sc.base and sc.base.suit == suit then
+                        bonus = bonus + 15
+                    end
+                end
+            end
+            if bonus > 0 then return { chips = bonus, card = card } end
+        end
+    end
+}
+
 -- Entomologist, Rare Joker
 SMODS.Joker {
     key = 'entomologist',
@@ -1563,8 +1777,8 @@ SMODS.Joker {
     loc_txt = {
         name = 'Entomologist',
         text = {
-            "Each hand played, a scored card",
-            "gets a random {C:attention}Insect token{}:",
+            "Each hand played, a scored card gets",
+            "a random {C:attention}Insect Sticker{}:",
             "{C:attention}Beetle{}: {C:chips}+40{} Chips | {C:attention}Firefly{}: {C:mult}+10{} Mult",
             "{C:attention}Butterfly{}: {C:attention}retrigger 1x{} | {C:attention}Spider{}: {C:chips}+15{} Chips"
         }
@@ -1583,45 +1797,52 @@ SMODS.Joker {
             card.ability.extra.blinds_beaten = (card.ability.extra.blinds_beaten or 0) + 1
         end
 
-        -- Add insect token after each hand
+        -- Add insect sticker after each hand
         if context.after and not context.blueprint then
             local insects = { 'beetle', 'butterfly', 'firefly', 'spider' }
             local insect = pseudorandom_element(insects, pseudoseed('entomologist_'..tostring(G.GAME.round or 0)))
             local candidates = (context.scoring_hand and #context.scoring_hand > 0 and context.scoring_hand) or (G.hand and G.hand.cards and #G.hand.cards > 0 and G.hand.cards) or G.playing_cards or {}
             if #candidates > 0 then
                 local target = pseudorandom_element(candidates, pseudoseed('entomologist_card'))
+                local sticker_key = 'insect_' .. insect
+                if SMODS.Stickers and SMODS.Stickers[sticker_key] then
+                    SMODS.Stickers[sticker_key]:apply(target, true)
+                end
                 target.witch_brew_insect = insect
                 target:juice_up(0.4, 0.4)
+                card_eval_status_text(card, 'extra', nil, nil, nil, { message = insect:gsub("^%l", string.upper)..'!', colour = G.C.PURPLE })
             end
         end
 
-        -- Apply insect effects on individual card scoring
+        -- Apply insect effects on individual card scoring (fallback for unstickered cards)
         if context.individual and context.cardarea == G.play and not context.blueprint then
             local c = context.other_card
             local insect = c and c.witch_brew_insect
-            if insect == 'beetle' then
-                return { chips = 40, card = card }
-            elseif insect == 'firefly' then
-                return { mult = 10, card = card }
-            elseif insect == 'spider' then
-                -- Bonus if same suit as a played card
-                local suit = c.base and c.base.suit
-                local bonus = 0
-                if context.scoring_hand then
-                    for _, sc in ipairs(context.scoring_hand) do
-                        if sc ~= c and sc.base and sc.base.suit == suit then
-                            bonus = bonus + 15
+            local has_sticker = c and c.ability and (c.ability.insect_beetle or c.ability.insect_butterfly or c.ability.insect_firefly or c.ability.insect_spider)
+            if not has_sticker then
+                if insect == 'beetle' then
+                    return { chips = 40, card = card }
+                elseif insect == 'firefly' then
+                    return { mult = 10, card = card }
+                elseif insect == 'spider' then
+                    local suit = c.base and c.base.suit
+                    local bonus = 0
+                    if context.scoring_hand then
+                        for _, sc in ipairs(context.scoring_hand) do
+                            if sc ~= c and sc.base and sc.base.suit == suit then
+                                bonus = bonus + 15
+                            end
                         end
                     end
+                    if bonus > 0 then return { chips = bonus, card = card } end
                 end
-                if bonus > 0 then return { chips = bonus, card = card } end
             end
         end
 
-        -- Butterfly retrigger
+        -- Butterfly retrigger (fallback for unstickered cards)
         if context.repetition and context.cardarea == G.play and not context.blueprint then
             local c = context.other_card
-            if c and c.witch_brew_insect == 'butterfly' then
+            if c and c.witch_brew_insect == 'butterfly' and not (c.ability and c.ability.insect_butterfly) then
                 return { repetitions = 1, card = card }
             end
         end

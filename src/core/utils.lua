@@ -265,38 +265,6 @@ function Card:generate_UIBox_ability_table(...)
     local res = card_generate_UIBox_ref(self, ...)
     G.GAME_IS_RENDERING_SECRET_CARD = false
 
-    -- Chameleon compatibility display (just like Blueprint / Plano)
-    local is_chameleon = card_has_key(self, 'chameleon_joker') or (self.ability and self.ability.name == 'Chameleon')
-    if is_chameleon and res and res.main then
-        local left_joker = nil
-        if G.jokers and G.jokers.cards then
-            for idx, j in ipairs(G.jokers.cards) do
-                if j == self and idx > 1 then
-                    left_joker = G.jokers.cards[idx - 1]
-                    break
-                end
-            end
-        end
-        local is_compat = left_joker and is_joker_copiable(left_joker)
-        local target_name = left_joker and ((left_joker.ability and left_joker.ability.name) or (left_joker.config and left_joker.config.center and left_joker.config.center.name)) or "None"
-        local badge_text = is_compat and ((localize and localize('k_compatible')) or "Compatible") or ((localize and localize('k_incompatible')) or "Incompatible")
-
-        local chameleon_ui_box = {
-            n = G.UIT.R,
-            config = { align = "cm", colour = G.C.CLEAR, padding = 0.04 },
-            nodes = {
-                {
-                    n = G.UIT.R,
-                    config = { align = "cm", colour = is_compat and G.C.GREEN or G.C.RED, r = 0.08, padding = 0.05, minw = 2.4, emboss = 0.04 },
-                    nodes = {
-                        { n = G.UIT.T, config = { text = " " .. badge_text .. " (" .. target_name .. ") ", colour = G.C.WHITE, scale = 0.3 } }
-                    }
-                }
-            }
-        }
-        table.insert(res.main, { chameleon_ui_box })
-    end
-
     -- Brainprint dual compatibility display (Left & Right)
     local is_brainprint = card_has_key(self, 'brainprint') or (self.ability and self.ability.name == 'Brainprint')
     if is_brainprint and res and res.main and G.jokers and G.jokers.cards then

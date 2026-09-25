@@ -693,7 +693,7 @@ SMODS.Joker {
             if G.jokers and G.jokers.cards then
                 for _, j in ipairs(G.jokers.cards) do
                     local is_self = card_has_key(j, 'reading_deficiency_joker')
-                    local is_copier = (j.ability and (j.ability.name == 'Blueprint' or j.ability.name == 'Brainstorm' or j.ability.name == 'Chameleon'))
+                    local is_copier = (j.ability and (j.ability.name == 'Blueprint' or j.ability.name == 'Brainstorm'))
                     if not is_self and not is_copier and not j.debuff and j.calculate_joker then
                         local check_ctx = {}
                         for k, v in pairs(context) do check_ctx[k] = v end
@@ -737,83 +737,50 @@ local function get_available_deck_ranks()
     return ranks
 end
 
-local function ensure_chameleon_rank(card)
-    card.ability = card.ability or {}
-    card.ability.extra = card.ability.extra or {}
-    local ranks = get_available_deck_ranks()
-    if #ranks > 0 then
-        local current = card.ability.extra.required_rank
-        local found = false
-        if current then
-            for _, r in ipairs(ranks) do
-                if r == current then found = true; break end
-            end
-        end
-        if not found or not current then
-            card.ability.extra.required_rank = pseudorandom_element(ranks, 'chameleon_rank')
-        end
-    else
-        card.ability.extra.required_rank = card.ability.extra.required_rank or 'Ace'
-    end
-end
-
 SMODS.Joker {
     key = 'chameleon_joker',
     atlas = 'witch_brew_jokers',
     loc_txt = {
         name = 'Chameleon',
         text = {
-            "Copies ability of the {C:attention}Joker to the left{}",
-            "if played hand contains at least one {C:attention}#1#{}",
-            "{C:inactive}(Rank changes every round from full deck){}"
+            "When {C:attention}Blind{} is selected, gain the",
+            "{C:attention}Tag{} of that Blind without skipping it.",
+            "{C:green}#1# in #2#{} chance to create an extra copy"
         }
     },
-    config = { extra = { required_rank = 'Ace' } },
+    config = { extra = { odds = 2 } },
     rarity = 2,
     pos = { x = 1, y = 2 },
     cost = 8,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
-        ensure_chameleon_rank(card)
-        return { vars = { card.ability.extra.required_rank or 'Ace' } }
+        return { vars = { '' .. (G.GAME and G.GAME.probabilities.normal or 1), (card and card.ability and card.ability.extra and card.ability.extra.odds) or 2 } }
     end,
     calculate = function(self, card, context)
-        ensure_chameleon_rank(card)
-
         if context.setting_blind and not context.blueprint then
-            local ranks = get_available_deck_ranks()
-            if #ranks > 0 then
-                card.ability.extra.required_rank = pseudorandom_element(ranks, 'chameleon_rank_round')
+            local blind_choice = (context.blind and (context.blind.get_type and context.blind:get_type() or context.blind.name)) or G.GAME.blind_on_deck
+            if blind_choice == 'Small Blind' then blind_choice = 'Small' end
+            if blind_choice == 'Big Blind' then blind_choice = 'Big' end
+            if blind_choice == 'Boss Blind' then blind_choice = 'Boss' end
+            local tag_key = G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags[blind_choice]
+            if not tag_key then
+                tag_key = get_next_tag_key('chameleon')
             end
-        end
-
-        local rank_played = false
-        local target_rank = card.ability.extra.required_rank
-        local cards_to_check = context.full_hand or context.scoring_hand or (G.play and G.play.cards)
-
-        if cards_to_check then
-            for _, c in ipairs(cards_to_check) do
-                if c.base and c.base.value == target_rank then
-                    rank_played = true
-                    break
-                end
-            end
-        end
-
-        if rank_played and G.jokers and G.jokers.cards then
-            local my_idx = nil
-            for idx, j in ipairs(G.jokers.cards) do
-                if j == card then my_idx = idx; break end
-            end
-
-            if my_idx and my_idx > 1 then
-                local left_joker = G.jokers.cards[my_idx - 1]
-                if left_joker and left_joker ~= card and is_joker_copiable(left_joker) then
-                    local ret = SMODS.blueprint_effect(card, left_joker, context)
-                    if ret then
-                        return ret
+            if tag_key and Tag and add_tag then
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        add_tag(Tag(tag_key))
+                        play_sound('generic1', 0.9 + 0.2 * math.random(), 0.8)
+                        card:juice_up(0.4, 0.4)
+                        if pseudorandom('chameleon_double') < ((G.GAME.probabilities.normal or 1) / ((card.ability and card.ability.extra and card.ability.extra.odds) or 2)) then
+                            add_tag(Tag(tag_key))
+                            card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Double Tag!', colour = G.C.PURPLE })
+                        else
+                            card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Tag Copied!', colour = G.C.PURPLE })
+                        end
+                        return true
                     end
-                end
+                }))
             end
         end
     end
@@ -1218,55 +1185,55 @@ SMODS.Joker {
             badges[1] = create_badge('Song', HEX('d4af37'), G.C.WHITE, 1.2)
         end
     end,
-    config = {},
+    config = { extra = { odds = 3 } },
     loc_txt = {
         name = 'Billie Jean',
         text = {
-            "If played hand contains both a",
-            "{C:attention}King{} and a {C:attention}Queen{}, create a",
-            "{C:dark_edition}Polychrome{} {C:attention}Wild Jack{} in hand",
-            "{C:inactive}('The kid is not my son'){}"
+            "{C:green}#1# in #2#{} chance to re-score played",
+            "hand in reverse {C:attention}(right to left){}",
+            "after scoring finishes",
+            "{C:inactive}('Moonwalk'){}"
         }
     },
     loc_vars = function(self, info_queue, card)
-        if info_queue then
-            info_queue[#info_queue + 1] = G.P_CENTERS.m_wild
-            info_queue[#info_queue + 1] = G.P_CENTERS.e_polychrome
-        end
-        return { vars = {} }
+        local prob = (G.GAME and G.GAME.probabilities.normal) or 1
+        local odds = (card and card.ability and card.ability.extra and card.ability.extra.odds) or 3
+        return { vars = { prob, odds } }
     end,
     calculate = function(self, card, context)
-        if context.before then
-            local has_king = false
-            local has_queen = false
-            local cards_to_check = context.scoring_hand or (G.play and G.play.cards) or {}
-            for _, sc in ipairs(cards_to_check) do
-                if sc:get_id() == 13 then has_king = true end
-                if sc:get_id() == 12 then has_queen = true end
-            end
-            if has_king and has_queen then
-                G.E_MANAGER:add_event(Event({
-                    trigger = 'after',
-                    delay = 0.3,
-                    func = function()
-                        local suits = {'Hearts', 'Diamonds', 'Spades', 'Clubs'}
-                        local chosen_suit = pseudorandom_element(suits, pseudoseed('billie_suit'))
-                        local suit_prefix = string.sub(chosen_suit, 1, 1)
-                        local _card = create_playing_card({
-                            front = G.P_CARDS[suit_prefix .. '_J'],
-                            center = G.P_CENTERS.m_wild
-                        }, G.hand, nil, nil, { G.C.SECONDARY_SET.Enhanced })
-                        _card:set_edition({ polychrome = true }, true)
-                        G.hand:sort()
-                        card_eval_status_text(card, 'extra', nil, nil, nil, { message = localize('k_plus_card') })
-                        return true
+        if context.after and not context.blueprint then
+            local prob = (G.GAME and G.GAME.probabilities.normal) or 1
+            local odds = (card.ability and card.ability.extra and card.ability.extra.odds) or 3
+            if pseudorandom('billie_jean') < (prob / odds) then
+                local scoring_hand = context.scoring_hand or (G.play and G.play.cards)
+                if scoring_hand and #scoring_hand > 0 then
+                    card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Moonwalk!', colour = HEX('d4af37') })
+                    for i = #scoring_hand, 1, -1 do
+                        local sc = scoring_hand[i]
+                        if not sc.debuff and not sc.destroyed and not sc.shattered then
+                            G.E_MANAGER:add_event(Event({
+                                trigger = 'after',
+                                delay = 0.2,
+                                func = function()
+                                    sc:juice_up(0.4, 0.4)
+                                    local c_chips = sc:get_chip_bonus()
+                                    local c_mult = (sc.ability and sc.ability.mult) or 0
+                                    if sc.ability and sc.ability.effect == 'Bonus Card' then c_chips = c_chips + (sc.ability.bonus or 30) end
+                                    if sc.ability and sc.ability.effect == 'Mult Card' then c_mult = c_mult + (sc.ability.mult or 4) end
+                                    if c_chips > 0 then
+                                        ease_chips(c_chips)
+                                        card_eval_status_text(sc, 'chips', c_chips)
+                                    end
+                                    if c_mult > 0 then
+                                        ease_mult(c_mult)
+                                        card_eval_status_text(sc, 'mult', c_mult)
+                                    end
+                                    return true
+                                end
+                            }))
+                        end
                     end
-                }))
-                return {
-                    message = "Not My Son!",
-                    colour = G.C.DARK_EDITION,
-                    card = card
-                }
+                end
             end
         end
     end
@@ -1287,7 +1254,7 @@ SMODS.Joker {
             "If you {C:red}fail{} a blind on your final hand,",
             "gain {C:blue}+1 Hand{} and reduce the blind",
             "score requirement by {C:attention}15%{}.",
-            "{C:inactive}(Once per blind){}"
+            "{S:1.1,C:red,E:2}Destroys self when activated{}"
         }
     },
     config = { extra = { used = false } },
@@ -1296,9 +1263,6 @@ SMODS.Joker {
     cost = 6,
     blueprint_compat = false,
     calculate = function(self, card, context)
-        if context.setting_blind and not context.blueprint then
-            card.ability.extra.used = false
-        end
         if context.after and not context.blueprint and G.GAME and G.GAME.chips and G.GAME.blind and G.GAME.chips < G.GAME.blind.chips then
             if G.GAME.current_round and G.GAME.current_round.hands_left == 0 and not card.ability.extra.used then
                 card.ability.extra.used = true
@@ -1308,7 +1272,17 @@ SMODS.Joker {
                     G.GAME.blind.chip_text = number_format(G.GAME.blind.chips)
                 end
                 card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Time Rift! +1 Hand', colour = G.C.BLUE })
-                return { message = 'Rewound!' }
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        play_sound('tarot1')
+                        card.T.r = -0.2
+                        card:juice_up(0.3, 0.4)
+                        card.states.drag.is = true
+                        card:start_dissolve({G.C.RED, G.C.PURPLE})
+                        return true
+                    end
+                }))
+                return { message = 'Destroyed!' }
             end
         end
     end
@@ -1417,16 +1391,74 @@ SMODS.Joker {
 }
 
 -- Ecosystem, Uncommon Joker
+local function calculate_ecosystem_suits(card, resolve_ties_randomly)
+    local counts = { Spades = 0, Hearts = 0, Clubs = 0, Diamonds = 0 }
+    if G.playing_cards then
+        for _, c in ipairs(G.playing_cards) do
+            local s = c.base and c.base.suit
+            if s and counts[s] then counts[s] = counts[s] + 1 end
+        end
+    end
+
+    local max_n = -1
+    local min_n = math.huge
+    for _, n in pairs(counts) do
+        if n > max_n then max_n = n end
+        if n < min_n then min_n = n end
+    end
+
+    local dom_candidates = {}
+    local rare_candidates = {}
+    local suits_order = { 'Spades', 'Hearts', 'Clubs', 'Diamonds' }
+    for _, s in ipairs(suits_order) do
+        if counts[s] == max_n then table.insert(dom_candidates, s) end
+        if counts[s] == min_n then table.insert(rare_candidates, s) end
+    end
+
+    local dom = card.ability.extra.dominant
+    local rare = card.ability.extra.rarest
+
+    if resolve_ties_randomly then
+        if #dom_candidates > 1 then
+            dom = pseudorandom_element(dom_candidates, pseudoseed('eco_dom_'..tostring(G.GAME.round or 0)))
+        else
+            dom = dom_candidates[1] or 'Spades'
+        end
+
+        local filtered_rare = {}
+        for _, s in ipairs(rare_candidates) do
+            if s ~= dom or #rare_candidates == 1 then table.insert(filtered_rare, s) end
+        end
+        if #filtered_rare > 1 then
+            rare = pseudorandom_element(filtered_rare, pseudoseed('eco_rare_'..tostring(G.GAME.round or 0)))
+        else
+            rare = filtered_rare[1] or dom_candidates[1] or 'Clubs'
+        end
+    else
+        if not dom or dom == '' or not counts[dom] then dom = dom_candidates[1] or 'Spades' end
+        if not rare or rare == '' or not counts[rare] then
+            for _, s in ipairs(rare_candidates) do
+                if s ~= dom then rare = s; break end
+            end
+            if not rare or rare == '' then rare = rare_candidates[1] or 'Clubs' end
+        end
+    end
+
+    card.ability.extra.dominant = dom
+    card.ability.extra.rarest = rare
+end
+
 SMODS.Joker {
     key = 'ecosystem',
     atlas = 'witch_brew_jokers',
     loc_txt = {
         name = 'Ecosystem',
         text = {
-            "The {C:attention}dominant suit{} in deck",
+            "The {C:attention}dominant suit{} in deck ({C:attention}#3#{})",
             "gives {X:mult,C:white}X#1#{} Mult per card scored.",
-            "The {C:attention}rarest suit{} in deck",
-            "gives {C:chips}+#2#{} Chips per card scored."
+            "The {C:attention}rarest suit{} in deck ({C:attention}#4#{})",
+            "gives {C:chips}+#2#{} Chips per card scored.",
+            "{C:inactive}(Ties decided randomly at end of round){}"
         }
     },
     config = { extra = { dominant = '', rarest = '', x_mult = 1.5, chips = 80 } },
@@ -1436,26 +1468,16 @@ SMODS.Joker {
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability and card.ability.extra) or self.config.extra
-        return { vars = { ex.x_mult or 1.5, ex.chips or 80 } }
+        if not ex.dominant or ex.dominant == '' or not ex.rarest or ex.rarest == '' then
+            if card then calculate_ecosystem_suits(card, false) end
+        end
+        local dom_name = (ex.dominant and ex.dominant ~= '' and ((localize and localize(ex.dominant, 'suits_plural')) or ex.dominant)) or 'None'
+        local rare_name = (ex.rarest and ex.rarest ~= '' and ((localize and localize(ex.rarest, 'suits_plural')) or ex.rarest)) or 'None'
+        return { vars = { ex.x_mult or 1.5, ex.chips or 80, dom_name, rare_name } }
     end,
     calculate = function(self, card, context)
-        -- Recalculate dominant/rarest at hand start
-        if context.before and not context.blueprint then
-            local counts = { Spades = 0, Hearts = 0, Clubs = 0, Diamonds = 0 }
-            if G.playing_cards then
-                for _, c in ipairs(G.playing_cards) do
-                    local s = c.base and c.base.suit
-                    if s and counts[s] then counts[s] = counts[s] + 1 end
-                end
-            end
-            local dom, dom_n = '', -1
-            local rare, rare_n = '', math.huge
-            for s, n in pairs(counts) do
-                if n > dom_n then dom_n = n; dom = s end
-                if n < rare_n then rare_n = n; rare = s end
-            end
-            card.ability.extra.dominant = dom
-            card.ability.extra.rarest = rare
+        if context.end_of_round and not context.blueprint and not context.individual and not context.repetition then
+            calculate_ecosystem_suits(card, true)
         end
 
         if context.individual and context.cardarea == G.play and not context.blueprint then
@@ -2165,10 +2187,10 @@ SMODS.Joker {
     loc_txt = {
         name = 'Mercenary',
         text = {
-            "No passive effect. Has up to {C:attention}5 contracts{}.",
-            "Complete one to earn a reward",
-            "and get a harder contract.",
-            "{C:inactive}(Active: #1#/#2# — #3#){}"
+            "Accepts bounty {C:attention}Contracts{} (Hands or Money goals).",
+            "Complete a contract to claim a {C:money}cash bounty{}",
+            "({C:money}+$8{} or {C:money}+$10{}) and draw a new one.",
+            "{C:inactive}(Current: {C:attention}#3#{C:inactive} [#1#/#2# Active]){}"
         }
     },
     config = { extra = {
@@ -2183,11 +2205,15 @@ SMODS.Joker {
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability.extra) or self.config.extra
-        local first = (ex.contracts and ex.contracts[1] and ex.contracts[1].name) or 'None'
+        local first_con = ex.contracts and ex.contracts[1]
+        local first_str = 'None'
+        if first_con then
+            first_str = first_con.name .. ' (' .. (first_con.progress or 0) .. '/' .. (first_con.needed or 0) .. ')'
+        end
         return { vars = {
             ex.active_count or 0,
             ex.max_contracts or 5,
-            first
+            first_str
         }}
     end,
     calculate = function(self, card, context)
@@ -2274,6 +2300,7 @@ SMODS.Joker {
             "If total round score is {C:attention}2X+{} blind requirement,",
             "store {C:attention}25%{} of excess {C:chips}Chips{} to add",
             "to your {C:attention}first hand{} of next blind.",
+            "{C:inactive}(Max storage: {C:attention}75%{} of Blind Requirement){}",
             "{C:inactive}(Stored: {C:chips}+#1#{C:inactive} Chips){}"
         }
     },
@@ -2308,11 +2335,19 @@ SMODS.Joker {
             local scored = (G.GAME and G.GAME.chips) or (G.GAME and G.GAME.current_round and G.GAME.current_round.current_hand and G.GAME.current_round.current_hand.chips) or 0
             if scored >= blind_req * 2 then
                 local excess = math.floor((scored - blind_req) * 0.25)
+                local max_cap = math.floor(blind_req * 0.75)
                 if excess > 0 then
-                    card.ability.extra.stored_chips = (card.ability.extra.stored_chips or 0) + excess
+                    local cur = card.ability.extra.stored_chips or 0
+                    local new_val = math.min(max_cap, cur + excess)
+                    local diff = new_val - cur
+                    card.ability.extra.stored_chips = new_val
                     G.GAME.witch_brew_cascade_double = true
                     G.GAME.witch_brew_cascada_double = true
-                    return { message = 'Stored '..excess..' Chips!', colour = G.C.CHIPS, card = card }
+                    if diff > 0 then
+                        return { message = 'Stored +'..diff..' Chips!', colour = G.C.CHIPS, card = card }
+                    else
+                        return { message = 'Cap Reached (75%)!', colour = G.C.CHIPS, card = card }
+                    end
                 end
             end
         end
