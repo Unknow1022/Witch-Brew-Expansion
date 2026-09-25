@@ -1740,10 +1740,10 @@ jd_def["j_Witch_brew_ecosystem"] = {
 -- Auctioneer
 jd_def["j_Witch_brew_auctioneer"] = {
     text = {
-        { text = "Auction (2x-5x+$5)", colour = G.C.GOLD }
+        { text = "Auction", colour = G.C.GOLD }
     },
     reminder_text = {
-        { text = "(Boss Blind End)" }
+        { text = "(5 Bidders, 1 in 5 Chance)" }
     }
 }
 

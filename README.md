@@ -1,4 +1,4 @@
-# 🃏 Witcher Brew Expansion (v2.1.1)
+# 🃏 Witcher Brew Expansion (v2.1.2)
 
 A content expansion for **Balatro** (Steamodded / Lovely).
 
@@ -89,7 +89,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Polarity Inversion**: Undebuffs cards in scoring hand and grants +10 Mult per inverted card.
 * **Inheritance**: Gains +Mult equal to 2X the sell value of sold Jokers.
 * **Ecosystem**: Dominant suit gives X1.5 Mult; rarest suit gives +80 Chips.
-* **Auctioneer**: Auctions a random Joker at Boss end for 2x, 3x, or 5x sell value + $5.
+* **Auctioneer**: Put a Joker up for auction with 5 buyers (starting at 50% sell value). Call for bids with a 1 in 5 chance each; sells when no one raises.
 * **Parasitic**: Grants X1.75 Mult while attached to host Joker; migrates every 3 rounds.
 * **Mercenary**: Complete active contracts (hands or money goals) for cash bounties.
 * **Cascade**: Stores 25% of excess chips on 2X+ blind wins for your next blind's first hand.
