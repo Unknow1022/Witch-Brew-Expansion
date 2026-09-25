@@ -185,7 +185,58 @@ end
 
 -- Localization Init, Registration hooks
 
+local SPANISH_TRANSLATIONS = {
+    descriptions = {
+        Tag = {},
+        Other = {
+            bull_market = {
+                name = 'Mercado Alcista',
+                text = {
+                    "¡Alto optimismo!",
+                    "Las acciones suben a {C:money}$12-$18{}.",
+                    "{C:inactive}(Superar Ciega en 1 mano){}"
+                }
+            },
+            bear_market = {
+                name = 'Mercado Bajista',
+                text = {
+                    "¡Desplome del mercado!",
+                    "Las acciones bajan a {C:money}$2-$5{}.",
+                    "{C:inactive}(Usar todas las manos en una ronda){}"
+                }
+            }
+        }
+    },
+    misc = {
+        dictionary = {
+            ['k_job'] = 'Empleo',
+            ['b_job_cards'] = 'Cartas de Empleo',
+            ['k_job_pack'] = 'Solicitud de Empleo'
+        }
+    }
+}
+
 function apply_witch_brew_language()
+    local lang = G.SETTINGS and G.SETTINGS.language or 'en-us'
+    if lang ~= 'es_419' and lang ~= 'es_ES' then return end
+
+    if SPANISH_TRANSLATIONS.descriptions and G.localization.descriptions then
+        for cat, items in pairs(SPANISH_TRANSLATIONS.descriptions) do
+            G.localization.descriptions[cat] = G.localization.descriptions[cat] or {}
+            for k, v in pairs(items) do
+                G.localization.descriptions[cat][k] = v
+                reparse_localization_entry(v)
+            end
+        end
+    end
+    if SPANISH_TRANSLATIONS.misc and G.localization.misc then
+        for cat, items in pairs(SPANISH_TRANSLATIONS.misc) do
+            G.localization.misc[cat] = G.localization.misc[cat] or {}
+            for k, v in pairs(items) do
+                G.localization.misc[cat][k] = v
+            end
+        end
+    end
 end
 
 local function init_witch_brew_localization()
@@ -262,6 +313,8 @@ local function init_witch_brew_localization()
         end
     end
 
+    apply_witch_brew_language()
+
     if alias_all_witch_brew_centers then
         alias_all_witch_brew_centers()
     end
@@ -326,7 +379,7 @@ local function build_witch_brew_config_tab()
                                     {
                                         n = G.UIT.T,
                                         config = {
-                                            text = "v2.0",
+                                            text = "v2.1.4",
                                             scale = 0.22,
                                             colour = G.C.WHITE
                                         }

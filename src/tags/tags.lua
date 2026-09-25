@@ -15,7 +15,7 @@ SMODS.Tag {
     loc_txt = {
         name = 'Discord Tag',
         text = {
-            "{C:green}#1# in 5{} chance to create",
+            "{C:green}#1# in 4{} chance to create",
             "{C:spectral}The Gang{}",
             "{C:inactive}(Must have room){}"
         }
@@ -26,7 +26,7 @@ SMODS.Tag {
     apply = function(self, tag, context)
         if context.type == 'immediate' or context.type == 'round_start_bonus' or context.type == 'new_blind_choice' or context.type == 'tag_add' then
             tag:yep('+', G.C.SECONDARY_SET.Spectral, function()
-                if pseudorandom('discord_tag') < ((G.GAME and G.GAME.probabilities.normal or 1) / 5) then
+                if pseudorandom('discord_tag') < ((G.GAME and G.GAME.probabilities.normal or 1) / 4) then
                     if G.consumeables and #G.consumeables.cards < G.consumeables.config.card_limit then
                         local tag_muchachada_key = (G.P_CENTERS and G.P_CENTERS['c_Witch_brew_the_gang'] and 'c_Witch_brew_the_gang') or (G.P_CENTERS and G.P_CENTERS['c_Witch_brew_la_muchachada'] and 'c_Witch_brew_la_muchachada') or 'c_the_gang'
                         local card = create_card('Spectral', G.consumeables, nil, nil, nil, nil, tag_muchachada_key, 'discord_tag')
