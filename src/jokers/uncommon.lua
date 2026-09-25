@@ -1213,20 +1213,38 @@ SMODS.Joker {
                         if not sc.debuff and not sc.destroyed and not sc.shattered then
                             G.E_MANAGER:add_event(Event({
                                 trigger = 'after',
-                                delay = 0.2,
+                                delay = 0.25,
                                 func = function()
                                     sc:juice_up(0.4, 0.4)
-                                    local c_chips = sc:get_chip_bonus()
-                                    local c_mult = (sc.ability and sc.ability.mult) or 0
-                                    if sc.ability and sc.ability.effect == 'Bonus Card' then c_chips = c_chips + (sc.ability.bonus or 30) end
-                                    if sc.ability and sc.ability.effect == 'Mult Card' then c_mult = c_mult + (sc.ability.mult or 4) end
-                                    if c_chips > 0 then
-                                        ease_chips(c_chips)
-                                        card_eval_status_text(sc, 'chips', c_chips)
+                                    local c_chips = (sc.get_chip_bonus and sc:get_chip_bonus()) or (sc.base and sc.base.nominal) or 0
+                                    if sc.edition and sc.edition.foil then
+                                        c_chips = c_chips + 50
                                     end
-                                    if c_mult > 0 then
-                                        ease_mult(c_mult)
-                                        card_eval_status_text(sc, 'mult', c_mult)
+                                    local c_mult = 0
+                                    if sc.get_chip_mult then
+                                        c_mult = sc:get_chip_mult()
+                                    elseif sc.ability and sc.ability.mult then
+                                        c_mult = sc.ability.mult
+                                    end
+                                    if sc.edition and sc.edition.holo then
+                                        c_mult = c_mult + 10
+                                    end
+                                    local total_add = c_chips + (c_mult * 4)
+                                    if sc.ability and sc.ability.effect == 'Glass Card' then
+                                        total_add = total_add * 2
+                                    end
+                                    if sc.edition and sc.edition.polychrome then
+                                        total_add = math.floor(total_add * 1.5)
+                                    end
+
+                                    if total_add > 0 then
+                                        card_eval_status_text(sc, 'chips', total_add)
+                                        G.GAME.chips = G.GAME.chips + total_add
+                                        local chip_UI = G.HUD and G.HUD:get_UIE_by_ID('chip_UI_count')
+                                        if chip_UI then
+                                            chip_UI:juice_up()
+                                        end
+                                        play_sound('chips2', 0.9 + 0.1 * (i / #scoring_hand))
                                     end
                                     return true
                                 end
