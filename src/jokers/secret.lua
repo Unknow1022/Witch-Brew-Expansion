@@ -9,6 +9,7 @@ SMODS.Atlas {
 local function register_secret_joker(def)
     def.rarity = def.rarity or 4
     def.is_secret = true
+    def.unlocked = (def.unlocked == nil and true) or def.unlocked
     def.soul_pos = def.soul_pos or { x = 1, y = (def.pos and def.pos.y) or 0 }
     def.cost = def.cost or 20
     def.in_pool = def.in_pool or function(self, args)
@@ -767,6 +768,7 @@ end
 function register_amalgam_joker(def)
     def.rarity = def.rarity or 4
     def.is_amalgam = true
+    def.unlocked = (def.unlocked == nil and true) or def.unlocked
     def.soul_pos = def.soul_pos or { x = 1, y = (def.pos and def.pos.y) or 0 }
     def.cost = def.cost or 25
     def.in_pool = def.in_pool or function(self, args)
@@ -852,7 +854,7 @@ register_amalgam_joker {
 
 -- Amalgam Joker: Vampiric Midas (Midas Mask + Vampire)
 register_amalgam_joker {
-    key = 'midas_vampirico',
+    key = 'vampiric_midas',
     atlas = 'secret_jokers',
     pos = { x = 2, y = 0 },
     soul_pos = { x = 3, y = 0 },
@@ -930,7 +932,7 @@ register_amalgam_joker {
 
 -- Amalgam Joker: Certified Programming (Hologram + Certificate)
 register_amalgam_joker {
-    key = 'programacion_certificacion',
+    key = 'certified_programming',
     atlas = 'secret_jokers',
     pos = { x = 2, y = 1 },
     soul_pos = {
@@ -1014,7 +1016,7 @@ register_amalgam_joker {
 
 -- Amalgam Joker: Galactic Traveler (Constellation + Astronomer)
 register_amalgam_joker {
-    key = 'viajero_galactico',
+    key = 'galactic_traveler',
     atlas = 'secret_jokers',
     pos = { x = 2, y = 2 },
     soul_pos = { x = 3, y = 2 },
@@ -1063,7 +1065,7 @@ register_amalgam_joker {
         -- Chance de 1 en 2 de subir nivel de la mano jugada
         if context.cardarea == G.jokers and context.before and not context.blueprint then
             local odds = (card.ability and card.ability.extra and card.ability.extra.odds) or 2
-            if pseudorandom('viajero_galactico') < G.GAME.probabilities.normal / odds then
+            if pseudorandom('galactic_traveler') < G.GAME.probabilities.normal / odds then
                 update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize(context.scoring_name, 'poker_hands'), chips = G.GAME.hands[context.scoring_name].chips, mult = G.GAME.hands[context.scoring_name].mult, level=G.GAME.hands[context.scoring_name].level})
                 level_up_hand(card, context.scoring_name, nil, 1)
                 update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
@@ -1097,7 +1099,7 @@ register_amalgam_joker {
 
 -- Amalgam Joker: Colorful Street (Four Fingers + Shortcut + Smeared Joker)
 register_amalgam_joker {
-    key = 'calle_colorida',
+    key = 'colorful_street',
     atlas = 'secret_jokers',
     pos = { x = 2, y = 3 },
     soul_pos = { x = 3, y = 3 },
@@ -1117,22 +1119,26 @@ register_amalgam_joker {
 -- Component jokers for each Amalgam Joker
 local COMPONENT_JOKERS_BY_AMALGAM = {
     ['brainprint']                  = { 'j_blueprint', 'j_brainstorm' },
+    ['vampiric_midas']              = { 'j_midas_mask', 'j_vampire' },
     ['midas_vampirico']             = { 'j_midas_mask', 'j_vampire' },
+    ['certified_programming']       = { 'j_hologram', 'j_certificate' },
     ['programacion_certificacion']   = { 'j_hologram', 'j_certificate' },
+    ['galactic_traveler']           = { 'j_constellation', 'j_astronomer' },
     ['viajero_galactico']           = { 'j_constellation', 'j_astronomer' },
+    ['colorful_street']             = { 'j_four_fingers', 'j_shortcut', 'j_smeared' },
     ['calle_colorida']               = { 'j_four_fingers', 'j_shortcut', 'j_smeared' },
 }
 
 local AMALGAM_NAME_MAP = {
-    ['Astronomer']      = 'viajero_galactico',
-    ['Constellation']   = 'viajero_galactico',
-    ['Four Fingers']    = 'calle_colorida',
-    ['Shortcut']        = 'calle_colorida',
-    ['Smeared Joker']   = 'calle_colorida',
-    ['Midas Mask']      = 'midas_vampirico',
-    ['Vampire']         = 'midas_vampirico',
-    ['Hologram']        = 'programacion_certificacion',
-    ['Certificate']     = 'programacion_certificacion',
+    ['Astronomer']      = 'galactic_traveler',
+    ['Constellation']   = 'galactic_traveler',
+    ['Four Fingers']    = 'colorful_street',
+    ['Shortcut']        = 'colorful_street',
+    ['Smeared Joker']   = 'colorful_street',
+    ['Midas Mask']      = 'vampiric_midas',
+    ['Vampire']         = 'vampiric_midas',
+    ['Hologram']        = 'certified_programming',
+    ['Certificate']     = 'certified_programming',
     ['Blueprint']       = 'brainprint',
     ['Brainstorm']      = 'brainprint',
 }
@@ -1251,7 +1257,7 @@ end
 local function has_viajero_galactico()
     if not (G and G.jokers and G.jokers.cards) then return false end
     for _, j in ipairs(G.jokers.cards) do
-        if not j.debuff and card_has_key(j, 'viajero_galactico') then
+        if not j.debuff and (card_has_key(j, 'galactic_traveler') or card_has_key(j, 'viajero_galactico')) then
             return true
         end
     end

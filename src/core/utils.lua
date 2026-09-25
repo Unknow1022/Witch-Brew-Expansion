@@ -1848,6 +1848,17 @@ function alias_all_witch_brew_centers()
         G.P_CENTERS['c_Witch_brew_transmutacion'] = nil
         G.P_CENTERS['c_Witch_brew_la_muchachada'] = nil
         G.P_CENTERS['c_Witch_brew_minero_job'] = nil
+
+        -- If profile has Unlock All enabled, guarantee all Witcher Brew centers are discovered & unlocked
+        if G.PROFILES and G.SETTINGS and G.SETTINGS.profile and G.PROFILES[G.SETTINGS.profile] and G.PROFILES[G.SETTINGS.profile].all_unlocked then
+            for k, v in pairs(G.P_CENTERS) do
+                if type(k) == 'string' and (string.find(k, 'Witch_brew') or string.find(k, 'witch_brew')) then
+                    v.unlocked = true
+                    v.discovered = true
+                    v.alerted = true
+                end
+            end
+        end
     end
 end
 
