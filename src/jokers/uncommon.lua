@@ -1518,6 +1518,29 @@ if G.FUNCS and G.FUNCS.exit_overlay_menu then
     end
 end
 
+local auction_raise_dialogues = {
+    "\"Do I hear another offer? Yes! We have a raise!\"",
+    "\"The stakes are rising! A generous offer from the floor!\"",
+    "\"A fierce bidding war begins! The price has gone up!\"",
+    "\"Look at that enthusiasm! The bid is climbing fast!\"",
+    "\"Stepping up to the plate! That's another great raise!\"",
+    "\"A bold wager! The buyers are eager for this Joker!\"",
+    "\"Someone knows real value when they see it! Bid increased!\"",
+    "\"No hesitation! We have a fresh bid on the table!\"",
+    "\"The room is heating up! Who will take this prize home?\"",
+    "\"An aggressive move! The price keeps jumping higher!\"",
+    "\"Going once, going twice... and a late bid comes in!\"",
+    "\"Now we're talking! The previous offer has been outbid!\"",
+    "\"A true connoisseur of Jokers raises the stakes!\"",
+    "\"Incredible momentum! Another buyer steps into the ring!\"",
+    "\"Can anyone top that? The bid pushes even higher!\"",
+    "\"Money on the table! We have an increased offer!\"",
+    "\"The gavel was about to fall, but another paddle goes up!\"",
+    "\"Sensational bid! This Joker is quite the hot commodity!\"",
+    "\"The competition is relentless! The price surges forward!\"",
+    "\"High roller territory! The bids just keep rolling in!\""
+}
+
 local function get_auction_bidders()
     local pool = {}
     if G.P_CENTERS then
@@ -1657,8 +1680,8 @@ local function open_auction_bidding_menu()
                             { n = G.UIT.R, config = { align = "cm", padding = 0.02 }, nodes = {
                                 { n = G.UIT.T, config = { text = "(Started at $" .. G.AUCTIONEER_STATE.start_bid .. ")", scale = 0.28, colour = G.C.UI.TEXT_INACTIVE } }
                             }},
-                            { n = G.UIT.R, config = { align = "cm", padding = 0.06, colour = G.C.L_BLACK, r = 0.08, minw = 4.8 }, nodes = {
-                                { n = G.UIT.T, config = { text = G.AUCTIONEER_STATE.status_msg or "", scale = 0.30, colour = G.C.GOLD, shadow = true } }
+                            { n = G.UIT.R, config = { align = "cm", padding = 0.06, colour = G.C.L_BLACK, r = 0.08, minw = 5.0, maxw = 6.0 }, nodes = {
+                                { n = G.UIT.T, config = { text = G.AUCTIONEER_STATE.status_msg or "", scale = 0.30, maxw = 5.5, colour = G.C.GOLD, shadow = true } }
                             }}
                         }
                     }
@@ -1731,116 +1754,135 @@ local function open_auction_select_menu(auctioneer_card)
         status_msg = ""
     }
 
+    local total_jokers = (G.jokers and G.jokers.cards) or {}
     local candidates = {}
-    if G.jokers and G.jokers.cards then
-        for _, j in ipairs(G.jokers.cards) do
-            if j ~= auctioneer_card and not (j.ability and j.ability.eternal) then
-                candidates[#candidates + 1] = j
-            end
+    for _, j in ipairs(total_jokers) do
+        if j ~= auctioneer_card and not (j.ability and j.ability.eternal) then
+            candidates[#candidates + 1] = j
         end
     end
 
-    local content_nodes = {}
-    if #candidates == 0 then
-        table.insert(content_nodes, {
-            n = G.UIT.R, config = { align = "cm", padding = 0.2 },
-            nodes = {
-                { n = G.UIT.T, config = { text = "No eligible Jokers to auction!", scale = 0.45, colour = G.C.RED } }
-            }
-        })
-        table.insert(content_nodes, {
-            n = G.UIT.R, config = { align = "cm", padding = 0.1 },
-            nodes = {
-                { n = G.UIT.T, config = { text = "(Eternal Jokers and Auctioneer cannot be auctioned)", scale = 0.35, colour = G.C.UI.TEXT_INACTIVE } }
-            }
-        })
-    else
-        local card_scale = (#candidates > 5) and 0.52 or 0.65
-        local joker_cols = {}
-        for _, j in ipairs(candidates) do
-            local c_area = CardArea(
-                0, 0,
-                G.CARD_W * card_scale,
-                G.CARD_H * card_scale,
-                { card_limit = 1, type = 'title', highlight_limit = 0, card_w = G.CARD_W * card_scale }
-            )
-            table.insert(G.auction_temp_areas, c_area)
-            local copy = copy_card(j, nil, card_scale)
-            c_area:emplace(copy)
+    local card_scale = (#total_jokers > 5) and 0.52 or 0.65
+    local joker_cols = {}
 
-            local sell_val = j.sell_cost or 1
-            local start_val = math.max(1, math.floor(sell_val / 2))
+    for _, j in ipairs(total_jokers) do
+        local is_auctioneer = (j == auctioneer_card)
+        local is_eternal = (j.ability and j.ability.eternal)
+        local can_auction = not is_auctioneer and not is_eternal
 
-            table.insert(joker_cols, {
-                n = G.UIT.C,
-                config = {
+        local c_area = CardArea(
+            0, 0,
+            G.CARD_W * card_scale,
+            G.CARD_H * card_scale,
+            { card_limit = 1, type = 'title', highlight_limit = 0, card_w = G.CARD_W * card_scale }
+        )
+        table.insert(G.auction_temp_areas, c_area)
+        local copy = copy_card(j, nil, card_scale)
+        c_area:emplace(copy)
+
+        local sell_val = j.sell_cost or 1
+        local start_val = math.max(1, math.floor(sell_val / 2))
+
+        local action_btn = nil
+        if can_auction then
+            action_btn = {
+                n = G.UIT.R, config = {
                     align = "cm",
-                    padding = 0.08,
-                    r = 0.12,
-                    colour = { 0.08, 0.08, 0.08, 0.8 },
-                    outline = 0.03,
-                    outline_colour = G.C.GOLD
+                    minw = 1.4,
+                    minh = 0.45,
+                    r = 0.1,
+                    hover = true,
+                    colour = G.C.GREEN,
+                    button = 'auctioneer_choose_target',
+                    ref_table = { card = j, auctioneer = auctioneer_card },
+                    shadow = true
                 },
                 nodes = {
-                    {
-                        n = G.UIT.R, config = { align = "cm", padding = 0.04 },
-                        nodes = { { n = G.UIT.O, config = { object = c_area } } }
-                    },
-                    {
-                        n = G.UIT.R, config = { align = "cm", padding = 0.02 },
-                        nodes = {
-                            { n = G.UIT.T, config = { text = "Sell Value: $" .. sell_val, scale = 0.3, colour = G.C.WHITE } }
-                        }
-                    },
-                    {
-                        n = G.UIT.R, config = { align = "cm", padding = 0.02 },
-                        nodes = {
-                            { n = G.UIT.T, config = { text = "Start Bid: $" .. start_val, scale = 0.34, colour = G.C.GOLD, shadow = true } }
-                        }
-                    },
-                    {
-                        n = G.UIT.R, config = {
-                            align = "cm",
-                            minw = 1.4,
-                            minh = 0.45,
-                            r = 0.1,
-                            hover = true,
-                            colour = G.C.GOLD,
-                            button = 'auctioneer_choose_target',
-                            ref_table = { card = j },
-                            shadow = true
-                        },
-                        nodes = {
-                            { n = G.UIT.T, config = { text = "AUCTION", scale = 0.36, colour = G.C.BLACK, shadow = false } }
-                        }
-                    }
+                    { n = G.UIT.T, config = { text = "🔨 AUCTION", scale = 0.36, colour = G.C.WHITE, shadow = true } }
                 }
-            })
+            }
+        elseif is_auctioneer then
+            action_btn = {
+                n = G.UIT.R, config = {
+                    align = "cm",
+                    minw = 1.4,
+                    minh = 0.45,
+                    r = 0.1,
+                    colour = G.C.UI.BACKGROUND_INACTIVE
+                },
+                nodes = {
+                    { n = G.UIT.T, config = { text = "AUCTIONEER", scale = 0.28, colour = G.C.UI.TEXT_INACTIVE } }
+                }
+            }
+        else
+            action_btn = {
+                n = G.UIT.R, config = {
+                    align = "cm",
+                    minw = 1.4,
+                    minh = 0.45,
+                    r = 0.1,
+                    colour = G.C.UI.BACKGROUND_INACTIVE
+                },
+                nodes = {
+                    { n = G.UIT.T, config = { text = "🔒 ETERNAL", scale = 0.28, colour = G.C.RED } }
+                }
+            }
         end
 
-        table.insert(content_nodes, {
-            n = G.UIT.R, config = { align = "cm", padding = 0.04 },
+        table.insert(joker_cols, {
+            n = G.UIT.C,
+            config = {
+                align = "cm",
+                padding = 0.08,
+                r = 0.12,
+                colour = can_auction and { 0.08, 0.14, 0.08, 0.85 } or { 0.08, 0.08, 0.08, 0.8 },
+                outline = can_auction and 0.04 or 0.02,
+                outline_colour = can_auction and G.C.GREEN or { 0.3, 0.3, 0.3, 0.5 }
+            },
             nodes = {
-                { n = G.UIT.T, config = { text = "Select a Joker to put up for auction. Initial price is 50% sell value:", scale = 0.35, colour = G.C.WHITE } }
+                {
+                    n = G.UIT.R, config = { align = "cm", padding = 0.04 },
+                    nodes = { { n = G.UIT.O, config = { object = c_area } } }
+                },
+                {
+                    n = G.UIT.R, config = { align = "cm", padding = 0.02 },
+                    nodes = {
+                        { n = G.UIT.T, config = { text = "Sell: $" .. sell_val, scale = 0.28, colour = G.C.WHITE } }
+                    }
+                },
+                {
+                    n = G.UIT.R, config = { align = "cm", padding = 0.02 },
+                    nodes = {
+                        { n = G.UIT.T, config = { text = "Start: $" .. start_val, scale = 0.32, colour = can_auction and G.C.GOLD or G.C.UI.TEXT_INACTIVE, shadow = true } }
+                    }
+                },
+                action_btn
             }
         })
-        table.insert(content_nodes, {
-            n = G.UIT.R, config = { align = "cm", padding = 0.1, colour = G.C.L_BLACK, r = 0.15, outline = 0.03, outline_colour = G.C.GOLD },
-            nodes = joker_cols
-        })
     end
+
+    local subtitle_text = (#candidates > 0)
+        and "Select which Joker to put up for auction (Starting Bid = 50% sell value):"
+        or "No eligible Jokers available to auction! (Auctioneer and Eternal Jokers cannot be auctioned)"
 
     local contents = {
         {
             n = G.UIT.R, config = { align = "cm", padding = 0.12 },
             nodes = {
-                { n = G.UIT.T, config = { text = "🔨 AUCTION HOUSE", scale = 0.65, colour = G.C.GOLD, shadow = true } }
+                { n = G.UIT.T, config = { text = "🔨 AUCTION HOUSE - SELECT A JOKER", scale = 0.62, colour = G.C.GOLD, shadow = true } }
             }
+        },
+        {
+            n = G.UIT.R, config = { align = "cm", padding = 0.04 },
+            nodes = {
+                { n = G.UIT.T, config = { text = subtitle_text, scale = 0.35, colour = (#candidates > 0) and G.C.WHITE or G.C.RED } }
+            }
+        },
+        {
+            n = G.UIT.R, config = { align = "cm", padding = 0.1, colour = G.C.L_BLACK, r = 0.15, outline = 0.03, outline_colour = G.C.GOLD },
+            nodes = joker_cols
         }
     }
-    for _, node in ipairs(content_nodes) do
-        table.insert(contents, node)
-    end
 
     local t = create_UIBox_generic_options({
         back_func = 'exit_overlay_menu',
@@ -1917,17 +1959,7 @@ end
 if G and G.FUNCS then
     G.FUNCS.can_auctioneer_open = function(e)
         local card = e.config.ref_table
-        local has_candidate = false
-        if card and G.jokers and G.jokers.cards and not card.debuff then
-            for _, j in ipairs(G.jokers.cards) do
-                if j ~= card and not (j.ability and j.ability.eternal) then
-                    has_candidate = true
-                    break
-                end
-            end
-        end
-        local state_ok = (G.STATE == G.STATES.SELECTING_HAND) or (G.shop_jokers and G.shop_jokers.cards) or (G.STATE == G.STATES.SHOP) or (G.STATE == G.STATES.BLIND_SELECT)
-        if has_candidate and state_ok and not (G.CONTROLLER and G.CONTROLLER.locks and next(G.CONTROLLER.locks)) then
+        if not (card and card.debuff) and not (G.STATE == G.STATES.HAND_PLAYED or G.STATE == G.STATES.DRAW_TO_HAND) then
             e.config.colour = G.C.GOLD
             e.config.button = 'auctioneer_open_select'
         else
@@ -1952,14 +1984,17 @@ if G and G.FUNCS then
     G.FUNCS.auctioneer_choose_target = function(e)
         if not e or not e.config or not e.config.ref_table or not e.config.ref_table.card then return end
         local target = e.config.ref_table.card
-        if not G.AUCTIONEER_STATE then return end
+        local auctioneer = e.config.ref_table.auctioneer or (G.AUCTIONEER_STATE and G.AUCTIONEER_STATE.auctioneer)
+        if not G.AUCTIONEER_STATE then G.AUCTIONEER_STATE = {} end
         G.AUCTIONEER_STATE.target = target
+        G.AUCTIONEER_STATE.auctioneer = auctioneer
         local sell_val = target.sell_cost or 1
         local start_price = math.max(1, math.floor(sell_val / 2))
         G.AUCTIONEER_STATE.start_bid = start_price
         G.AUCTIONEER_STATE.current_bid = start_price
         G.AUCTIONEER_STATE.round = 1
-        G.AUCTIONEER_STATE.status_msg = "Auction started! Initial bid: $" .. start_price
+        local target_name = (target.ability and target.ability.name) or (target.config and target.config.center and target.config.center.name) or "Joker"
+        G.AUCTIONEER_STATE.status_msg = "\"Welcome! Bidding opens at $" .. start_price .. " for " .. target_name .. "!\""
         G.AUCTIONEER_STATE.bidders = get_auction_bidders()
         open_auction_bidding_menu()
     end
@@ -1987,7 +2022,8 @@ if G and G.FUNCS then
         if raised_count > 0 then
             G.AUCTIONEER_STATE.current_bid = G.AUCTIONEER_STATE.current_bid + total_increase
             G.AUCTIONEER_STATE.round = round + 1
-            G.AUCTIONEER_STATE.status_msg = raised_count .. " buyer(s) raised the bid by +$" .. total_increase .. "!"
+            local quote = pseudorandom_element(auction_raise_dialogues, pseudoseed('auction_quote_' .. round))
+            G.AUCTIONEER_STATE.status_msg = quote .. " (+$" .. total_increase .. "!)"
             play_sound('coin2', 1, 0.8)
             open_auction_bidding_menu()
         else

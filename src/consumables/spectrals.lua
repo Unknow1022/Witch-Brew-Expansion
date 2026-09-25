@@ -844,21 +844,7 @@ SMODS.Consumable {
     end
 }
 
--- Backward compatibility aliases for Spectrals
-if G and G.P_CENTERS then
-    local spectral_aliases = {
-        ['c_Witch_brew_refuerzo'] = 'c_Witch_brew_reinforcement',
-        ['c_Witch_brew_nigromancia'] = 'c_Witch_brew_necromancy',
-        ['c_Witch_brew_erradicacion'] = 'c_Witch_brew_eradication',
-        ['c_Witch_brew_transmutacion'] = 'c_Witch_brew_transmutation',
-        ['c_Witch_brew_la_muchachada'] = 'c_Witch_brew_the_gang',
-    }
-    for old_k, new_k in pairs(spectral_aliases) do
-        if G.P_CENTERS[new_k] and not G.P_CENTERS[old_k] then
-            G.P_CENTERS[old_k] = G.P_CENTERS[new_k]
-        end
-    end
-end
+
 
 
 

@@ -973,9 +973,4 @@ SMODS.Booster {
     ease_background_colour = function(self) ease_job_pack_background() end
 }
 
--- Backward compatibility alias for Miner Job
-if G and G.P_CENTERS then
-    if G.P_CENTERS['c_Witch_brew_miner_job'] and not G.P_CENTERS['c_Witch_brew_minero_job'] then
-        G.P_CENTERS['c_Witch_brew_minero_job'] = G.P_CENTERS['c_Witch_brew_miner_job']
-    end
-end
+

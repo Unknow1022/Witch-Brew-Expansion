@@ -1650,6 +1650,82 @@ if SMODS and SMODS.Center and SMODS.Center.register then
     end
 end
 
+-- Backward compatibility aliases for renamed Spanish Joker keys
+local _joker_key_renames = {
+    ['motorizado_joker'] = 'motorized_joker',
+    ['contratado_joker'] = 'hired_joker',
+    ['sello_aprobacion_joker'] = 'seal_of_approval_joker',
+    ['charco_pintura_joker'] = 'paint_puddle_joker',
+    ['lesionado_joker'] = 'injured_joker',
+    ['mano_extendida'] = 'extended_hand',
+    ['hoguera'] = 'bonfire',
+    ['grieta_temporal'] = 'temporal_rift',
+    ['inversion_polaridad'] = 'polarity_inversion',
+    ['herencia'] = 'inheritance',
+    ['ecosistema'] = 'ecosystem',
+    ['subastador'] = 'auctioneer',
+    ['parasitario'] = 'parasitic',
+    ['mercenario'] = 'mercenary',
+    ['cascada'] = 'cascade',
+    ['parca_joker'] = 'reaper_joker',
+    ['sobresaturado_joker'] = 'oversaturated_joker',
+    ['radiacion'] = 'radiation',
+    ['director_orquesta'] = 'orchestra_director',
+    ['meteorologo'] = 'meteorologist',
+    ['relojero_loco'] = 'mad_clockmaker',
+    ['catalizador'] = 'catalyst',
+    ['grafitero'] = 'graffiti_artist',
+    ['hipnotista'] = 'hypnotist',
+    ['alquimista_manos'] = 'hand_alchemist',
+    ['entomologo'] = 'entomologist',
+    ['devorador_mundos'] = 'world_devourer',
+    ['devorador_de_mundos'] = 'world_devourer',
+    ['paradoja_viviente'] = 'living_paradox',
+    ['paradoja_viva'] = 'living_paradox',
+    ['cronista_estrellas'] = 'star_chronicler',
+    ['cronista'] = 'star_chronicler',
+    ['midas_vampirico'] = 'vampiric_midas',
+    ['programacion_certificacion'] = 'certified_programming',
+    ['viajero_galactico'] = 'galactic_traveler',
+    ['calle_colorida'] = 'colorful_street',
+    ['rey_de_mimos'] = 'mime_king',
+    ['album_de_fotos'] = 'photo_album',
+    ['huevo_pirata'] = 'pirate_egg',
+    ['botas_reforzadas'] = 'reinforced_boots',
+    ['gato_dorado_suerte'] = 'golden_lucky_cat',
+    ['antiguedad_irreconocible'] = 'unrecognizable_antique',
+    ['emoji_macabro'] = 'macabre_emoji',
+    ['falta_de_lectura_joker'] = 'reading_deficiency_joker',
+    ['designer_joker'] = 'disenador_joker',
+    ['duelo_de_valores_joker'] = 'duel_of_value_joker',
+}
+
+local _witch_brew_key_renames = {
+    ['c_Witch_brew_potion_estiramiento'] = 'c_Witch_brew_potion_stretch',
+    ['c_Witch_brew_potion_rayo'] = 'c_Witch_brew_potion_lightning',
+    ['c_Witch_brew_potion_ventisca'] = 'c_Witch_brew_potion_blizzard',
+    ['c_Witch_brew_potion_furia'] = 'c_Witch_brew_potion_fury',
+    ['c_Witch_brew_potion_amalgama'] = 'c_Witch_brew_potion_amalgam',
+    ['c_Witch_brew_potion_mercurio'] = 'c_Witch_brew_potion_mercury',
+    ['c_Witch_brew_potion_espejo'] = 'c_Witch_brew_potion_mirror',
+    ['c_Witch_brew_potion_reloj'] = 'c_Witch_brew_potion_clock',
+    ['c_Witch_brew_potion_golondrina'] = 'c_Witch_brew_potion_swallow',
+    ['c_Witch_brew_potion_lechuza'] = 'c_Witch_brew_potion_tawny_owl',
+    ['c_Witch_brew_potion_filtro_petri'] = 'c_Witch_brew_potion_petri',
+    ['c_Witch_brew_potion_oropendola'] = 'c_Witch_brew_potion_golden_oriole',
+    ['c_Witch_brew_potion_sangre_negra'] = 'c_Witch_brew_potion_black_blood',
+    ['c_Witch_brew_refuerzo'] = 'c_Witch_brew_reinforcement',
+    ['c_Witch_brew_nigromancia'] = 'c_Witch_brew_necromancy',
+    ['c_Witch_brew_erradicacion'] = 'c_Witch_brew_eradication',
+    ['c_Witch_brew_transmutacion'] = 'c_Witch_brew_transmutation',
+    ['c_Witch_brew_la_muchachada'] = 'c_Witch_brew_the_gang',
+    ['c_Witch_brew_minero_job'] = 'c_Witch_brew_miner_job',
+}
+for old_k, new_k in pairs(_joker_key_renames) do
+    _witch_brew_key_renames['j_Witch_brew_' .. old_k] = 'j_Witch_brew_' .. new_k
+    _witch_brew_key_renames['j_' .. old_k] = 'j_Witch_brew_' .. new_k
+end
+
 -- Universal center aliasing and clean display name normalization for Witcher Brew centers
 function alias_all_witch_brew_centers()
     if G and G.P_CENTERS then
@@ -1666,44 +1742,14 @@ function alias_all_witch_brew_centers()
                     local res = type(orig_index) == 'function' and orig_index(t, k) or orig_index[k]
                     if res ~= nil then return res end
                 end
-                if type(k) == 'string' and string.find(k, 'Witch brew') then
-                    local clean_k = string.gsub(k, 'Witch brew', 'Witch_brew')
-                    return rawget(t, clean_k)
-                end
-                local key_renames = {
-                    ['c_Witch_brew_potion_estiramiento'] = 'c_Witch_brew_potion_stretch',
-                    ['c_Witch_brew_potion_rayo'] = 'c_Witch_brew_potion_lightning',
-                    ['c_Witch_brew_potion_ventisca'] = 'c_Witch_brew_potion_blizzard',
-                    ['c_Witch_brew_potion_furia'] = 'c_Witch_brew_potion_fury',
-                    ['c_Witch_brew_potion_amalgama'] = 'c_Witch_brew_potion_amalgam',
-                    ['c_Witch_brew_potion_mercurio'] = 'c_Witch_brew_potion_mercury',
-                    ['c_Witch_brew_potion_espejo'] = 'c_Witch_brew_potion_mirror',
-                    ['c_Witch_brew_potion_reloj'] = 'c_Witch_brew_potion_clock',
-                    ['c_Witch_brew_potion_golondrina'] = 'c_Witch_brew_potion_swallow',
-                    ['c_Witch_brew_potion_lechuza'] = 'c_Witch_brew_potion_tawny_owl',
-                    ['c_Witch_brew_potion_filtro_petri'] = 'c_Witch_brew_potion_petri',
-                    ['c_Witch_brew_potion_oropendola'] = 'c_Witch_brew_potion_golden_oriole',
-                    ['c_Witch_brew_potion_sangre_negra'] = 'c_Witch_brew_potion_black_blood',
-                    ['c_Witch_brew_refuerzo'] = 'c_Witch_brew_reinforcement',
-                    ['c_Witch_brew_nigromancia'] = 'c_Witch_brew_necromancy',
-                    ['c_Witch_brew_erradicacion'] = 'c_Witch_brew_eradication',
-                    ['c_Witch_brew_transmutacion'] = 'c_Witch_brew_transmutation',
-                    ['c_Witch_brew_la_muchachada'] = 'c_Witch_brew_the_gang',
-                    ['c_Witch_brew_minero_job'] = 'c_Witch_brew_miner_job',
-                    ['j_Witch_brew_falta_de_lectura_joker'] = 'j_Witch_brew_reading_deficiency_joker',
-                    ['j_Witch_brew_designer_joker'] = 'j_Witch_brew_disenador_joker',
-                    ['j_Witch_brew_charco_pintura_joker'] = 'j_Witch_brew_paint_puddle_joker',
-                    ['j_Witch_brew_duelo_de_valores_joker'] = 'j_Witch_brew_duel_of_value_joker',
-                    ['j_Witch_brew_sobresaturado_joker'] = 'j_Witch_brew_oversaturated_joker',
-                    ['j_Witch_brew_motorizado_joker'] = 'j_Witch_brew_motorized_joker',
-                    ['j_Witch_brew_contratado_joker'] = 'j_Witch_brew_hired_joker',
-                    ['j_Witch_brew_sello_aprobacion_joker'] = 'j_Witch_brew_seal_of_approval_joker',
-                    ['j_Witch_brew_lesionado_joker'] = 'j_Witch_brew_injured_joker',
-                    ['j_Witch_brew_mano_extendida'] = 'j_Witch_brew_extended_hand',
-                    ['j_Witch_brew_hoguera'] = 'j_Witch_brew_bonfire',
-                }
-                if type(k) == 'string' and key_renames[k] then
-                    return rawget(t, key_renames[k])
+                if type(k) == 'string' then
+                    if string.find(k, 'Witch brew') then
+                        local clean_k = string.gsub(k, 'Witch brew', 'Witch_brew')
+                        return rawget(t, clean_k)
+                    end
+                    if _witch_brew_key_renames[k] then
+                        return rawget(t, _witch_brew_key_renames[k])
+                    end
                 end
                 return nil
             end
@@ -1790,60 +1836,18 @@ function alias_all_witch_brew_centers()
         end
     end
 
-    -- Backward compatibility aliases for renamed Spanish Joker keys
-    local _joker_key_renames = {
-        ['motorizado_joker'] = 'motorized_joker',
-        ['contratado_joker'] = 'hired_joker',
-        ['sello_aprobacion_joker'] = 'seal_of_approval_joker',
-        ['charco_pintura_joker'] = 'paint_puddle_joker',
-        ['lesionado_joker'] = 'injured_joker',
-        ['mano_extendida'] = 'extended_hand',
-        ['hoguera'] = 'bonfire',
-        ['grieta_temporal'] = 'temporal_rift',
-        ['inversion_polaridad'] = 'polarity_inversion',
-        ['herencia'] = 'inheritance',
-        ['ecosistema'] = 'ecosystem',
-        ['subastador'] = 'auctioneer',
-        ['parasitario'] = 'parasitic',
-        ['mercenario'] = 'mercenary',
-        ['cascada'] = 'cascade',
-        ['parca_joker'] = 'reaper_joker',
-        ['sobresaturado_joker'] = 'oversaturated_joker',
-        ['radiacion'] = 'radiation',
-        ['director_orquesta'] = 'orchestra_director',
-        ['meteorologo'] = 'meteorologist',
-        ['relojero_loco'] = 'mad_clockmaker',
-        ['catalizador'] = 'catalyst',
-        ['grafitero'] = 'graffiti_artist',
-        ['hipnotista'] = 'hypnotist',
-        ['alquimista_manos'] = 'hand_alchemist',
-        ['entomologo'] = 'entomologist',
-        ['devorador_mundos'] = 'world_devourer',
-        ['devorador_de_mundos'] = 'world_devourer',
-        ['paradoja_viviente'] = 'living_paradox',
-        ['paradoja_viva'] = 'living_paradox',
-        ['cronista_estrellas'] = 'star_chronicler',
-        ['cronista'] = 'star_chronicler',
-        ['midas_vampirico'] = 'vampiric_midas',
-        ['programacion_certificacion'] = 'certified_programming',
-        ['viajero_galactico'] = 'galactic_traveler',
-        ['calle_colorida'] = 'colorful_street',
-        ['rey_de_mimos'] = 'mime_king',
-        ['album_de_fotos'] = 'photo_album',
-        ['huevo_pirata'] = 'pirate_egg',
-        ['botas_reforzadas'] = 'reinforced_boots',
-        ['gato_dorado_suerte'] = 'golden_lucky_cat',
-        ['antiguedad_irreconocible'] = 'unrecognizable_antique',
-        ['emoji_macabro'] = 'macabre_emoji',
-    }
+    -- Purge any duplicate alias keys so they never appear in pairs(G.P_CENTERS) or spawn/debug menus
     if G and G.P_CENTERS then
-        for old_k, new_k in pairs(_joker_key_renames) do
-            local new_center = G.P_CENTERS['j_Witch_brew_' .. new_k] or G.P_CENTERS['j_' .. new_k]
-            if new_center then
-                G.P_CENTERS['j_Witch_brew_' .. old_k] = new_center
-                G.P_CENTERS['j_' .. old_k] = new_center
-            end
+        for old_k, _ in pairs(_joker_key_renames) do
+            G.P_CENTERS['j_Witch_brew_' .. old_k] = nil
+            G.P_CENTERS['j_' .. old_k] = nil
         end
+        G.P_CENTERS['c_Witch_brew_refuerzo'] = nil
+        G.P_CENTERS['c_Witch_brew_nigromancia'] = nil
+        G.P_CENTERS['c_Witch_brew_erradicacion'] = nil
+        G.P_CENTERS['c_Witch_brew_transmutacion'] = nil
+        G.P_CENTERS['c_Witch_brew_la_muchachada'] = nil
+        G.P_CENTERS['c_Witch_brew_minero_job'] = nil
     end
 end
 
