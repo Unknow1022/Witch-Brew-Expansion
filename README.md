@@ -84,7 +84,7 @@ A content expansion for **Balatro** (Steamodded / Lovely).
 * **Injured Joker**: +125 Chips and X1.5 Mult on Straights; evolves at round end.
 * **Extended Hand**: Gains +X0.2 Mult on hands of <= 4 cards without discards (starts at X1).
 * **Bonfire**: Face card discards permanently add +X0.1 Mult (1 in 6 chance to destroy).
-* **Billie Jean**: King + Queen scored creates a Polychrome Wild Jack in hand.
+* **Billie Jean**: Scored cards have a 1 in 8 chance to become a Polychrome Shiny Card.
 * **Temporal Rift**: Revives run once with +1 Hand and $0 when hands reach 0.
 * **Polarity Inversion**: Undebuffs cards in scoring hand and grants +10 Mult per inverted card.
 * **Inheritance**: Gains +Mult equal to 2X the sell value of sold Jokers.

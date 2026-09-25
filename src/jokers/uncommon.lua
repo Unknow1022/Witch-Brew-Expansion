@@ -1185,73 +1185,53 @@ SMODS.Joker {
             badges[1] = create_badge('Song', HEX('d4af37'), G.C.WHITE, 1.2)
         end
     end,
-    config = { extra = { odds = 3 } },
+    config = { extra = { odds = 8 } },
     loc_txt = {
         name = 'Billie Jean',
         text = {
-            "{C:green}#1# in #2#{} chance to re-score played",
-            "hand in reverse {C:attention}(right to left){}",
-            "after scoring finishes",
-            "{C:inactive}('Moonwalk'){}"
+            "Each scored card has a",
+            "{C:green}#1# in #2#{} chance to become",
+            "a {C:dark_edition}Polychrome{} {C:attention}Shiny Card{}"
         }
     },
     loc_vars = function(self, info_queue, card)
+        if info_queue then
+            local diamond_center = (get_diamond_enhancement_center and get_diamond_enhancement_center()) or (G.P_CENTERS and G.P_CENTERS.m_Witch_brew_diamond)
+            if diamond_center then
+                info_queue[#info_queue + 1] = diamond_center
+            end
+            if G.P_CENTERS and G.P_CENTERS.e_polychrome then
+                info_queue[#info_queue + 1] = G.P_CENTERS.e_polychrome
+            end
+        end
         local prob = (G.GAME and G.GAME.probabilities.normal) or 1
-        local odds = (card and card.ability and card.ability.extra and card.ability.extra.odds) or 3
+        local odds = (card and card.ability and card.ability.extra and card.ability.extra.odds) or 8
         return { vars = { prob, odds } }
     end,
     calculate = function(self, card, context)
-        if context.after and not context.blueprint then
+        if context.individual and context.cardarea == G.play then
             local prob = (G.GAME and G.GAME.probabilities.normal) or 1
-            local odds = (card.ability and card.ability.extra and card.ability.extra.odds) or 3
+            local odds = (card.ability and card.ability.extra and card.ability.extra.odds) or 8
             if pseudorandom('billie_jean') < (prob / odds) then
-                local scoring_hand = context.scoring_hand or (G.play and G.play.cards)
-                if scoring_hand and #scoring_hand > 0 then
-                    card_eval_status_text(card, 'extra', nil, nil, nil, { message = 'Moonwalk!', colour = HEX('d4af37') })
-                    for i = #scoring_hand, 1, -1 do
-                        local sc = scoring_hand[i]
-                        if not sc.debuff and not sc.destroyed and not sc.shattered then
-                            G.E_MANAGER:add_event(Event({
-                                trigger = 'after',
-                                delay = 0.25,
-                                func = function()
-                                    sc:juice_up(0.4, 0.4)
-                                    local c_chips = (sc.get_chip_bonus and sc:get_chip_bonus()) or (sc.base and sc.base.nominal) or 0
-                                    if sc.edition and sc.edition.foil then
-                                        c_chips = c_chips + 50
-                                    end
-                                    local c_mult = 0
-                                    if sc.get_chip_mult then
-                                        c_mult = sc:get_chip_mult()
-                                    elseif sc.ability and sc.ability.mult then
-                                        c_mult = sc.ability.mult
-                                    end
-                                    if sc.edition and sc.edition.holo then
-                                        c_mult = c_mult + 10
-                                    end
-                                    local total_add = c_chips + (c_mult * 4)
-                                    if sc.ability and sc.ability.effect == 'Glass Card' then
-                                        total_add = total_add * 2
-                                    end
-                                    if sc.edition and sc.edition.polychrome then
-                                        total_add = math.floor(total_add * 1.5)
-                                    end
-
-                                    if total_add > 0 then
-                                        card_eval_status_text(sc, 'chips', total_add)
-                                        G.GAME.chips = G.GAME.chips + total_add
-                                        local chip_UI = G.HUD and G.HUD:get_UIE_by_ID('chip_UI_count')
-                                        if chip_UI then
-                                            chip_UI:juice_up()
-                                        end
-                                        play_sound('chips2', 0.9 + 0.1 * (i / #scoring_hand))
-                                    end
-                                    return true
-                                end
-                            }))
+                local other = context.other_card
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'after',
+                    delay = 0.15,
+                    func = function()
+                        local center = (get_diamond_enhancement_center and get_diamond_enhancement_center()) or (G.P_CENTERS and G.P_CENTERS.m_Witch_brew_diamond)
+                        if center then
+                            other:set_ability(center)
                         end
+                        other:set_edition({ polychrome = true }, true)
+                        play_sound('polychrome1')
+                        other:juice_up(0.5, 0.5)
+                        return true
                     end
-                end
+                }))
+                return {
+                    extra = { message = 'Billie Jean!', colour = HEX('d4af37') },
+                    card = card
+                }
             end
         end
     end

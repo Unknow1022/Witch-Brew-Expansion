@@ -1656,10 +1656,10 @@ jd_def["j_Witch_brew_reading_deficiency_joker"] = jd_def["j_Witch_brew_falta_de_
 -- Billie Jean
 jd_def["j_Witch_brew_billie_jean"] = {
     text = {
-        { text = "1/3 Moonwalk", colour = HEX('d4af37') }
+        { text = "1/8 Polychrome", colour = G.C.DARK_EDITION }
     },
     reminder_text = {
-        { text = "(Reverse Scoring)" }
+        { text = "(Scored Cards)" }
     }
 }
 
