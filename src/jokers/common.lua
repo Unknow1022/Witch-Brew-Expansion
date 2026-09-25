@@ -19,9 +19,9 @@ SMODS.Joker {
         }
     },
     config = { extra = {} },
-    rarity = 1,
+    rarity = 2,
     pos = { x = 0, y = 0 },
-    cost = 5,
+    cost = 6,
     blueprint_compat = true,
     calculate = function(self, card, context)
         if context.joker_main and context.poker_hands and context.poker_hands['Four of a Kind'] and next(context.poker_hands['Four of a Kind']) then
@@ -170,9 +170,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { used = false } },
-    rarity = 1,
+    rarity = 2,
     pos = { x = 3, y = 0 },
-    cost = 5,
+    cost = 6,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local used = (card and card.ability and card.ability.extra and card.ability.extra.used) or false
@@ -498,9 +498,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { counter = 10, xmult = 3, cards_this_blind = 0, triggered = false } },
-    rarity = 1,
+    rarity = 2,
     pos = { x = 3, y = 6 },
-    cost = 5,
+    cost = 6,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability and card.ability.extra) or self.config.extra
@@ -644,9 +644,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { cost = 2, drawn_triggered = false } },
-    rarity = 1,
+    rarity = 3,
     pos = { x = 6, y = 6 },
-    cost = 5,
+    cost = 8,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         return { vars = { (card and card.ability.extra.cost) or 2 } }
@@ -805,9 +805,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { count = 3, drawn_triggered = false } },
-    rarity = 1,
+    rarity = 2,
     pos = { x = 2, y = 7 },
-    cost = 5,
+    cost = 6,
     blueprint_compat = false,
     calculate = function(self, card, context)
         if context.setting_blind and not context.blueprint then
@@ -861,9 +861,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { count = 0, watching = '' } },
-    rarity = 1,
+    rarity = 3,
     pos = { x = 3, y = 7 },
-    cost = 5,
+    cost = 8,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         return { vars = { (card and card.ability.extra.count) or 0 } }
@@ -926,9 +926,9 @@ SMODS.Joker {
         }
     },
     config = { extra = {} },
-    rarity = 1,
+    rarity = 2,
     pos = { x = 4, y = 7 },
-    cost = 5,
+    cost = 6,
     blueprint_compat = false,
     calculate = function(self, card, context)
         if context.before and not context.blueprint and context.scoring_hand then

@@ -1127,9 +1127,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { odds = 4 } },
-    rarity = 3,
+    rarity = 2,
     pos = { x = 1, y = 9 },
-    cost = 8,
+    cost = 6,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local prob = (G.GAME and G.GAME.probabilities.normal) or 1
@@ -1368,9 +1368,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { mult_per_discard = 14 } },
-    rarity = 3,
+    rarity = 1,
     pos = { x = 3, y = 9 },
-    cost = 8,
+    cost = 5,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         local rate = (card and card.ability and card.ability.extra and card.ability.extra.mult_per_discard) or 14
@@ -1480,9 +1480,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { x_mult = 1.5 } },
-    rarity = 3,
+    rarity = 2,
     pos = { x = 5, y = 9 },
-    cost = 8,
+    cost = 6,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         return { vars = { (card and card.ability and card.ability.extra and card.ability.extra.x_mult) or 1.5 } }
@@ -1541,9 +1541,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { odds = 3, hypnotized = false, bosses_defeated = {}, boss_count = 0 } },
-    rarity = 3,
+    rarity = 2,
     pos = { x = 6, y = 9 },
-    cost = 8,
+    cost = 6,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local prob = (G.GAME and G.GAME.probabilities.normal) or 1
@@ -1602,9 +1602,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { odds = 3, neg_levels_given = 0 } },
-    rarity = 3,
+    rarity = 2,
     pos = { x = 0, y = 10 },
-    cost = 8,
+    cost = 6,
     blueprint_compat = false,
     loc_vars = function(self, info_queue, card)
         local prob = (G.GAME and G.GAME.probabilities.normal) or 1

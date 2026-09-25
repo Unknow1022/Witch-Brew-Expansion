@@ -178,9 +178,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { perma_chips = 2, hand_threshold = 7, xmult = 2.5, sell_cash = 15 } },
-    rarity = 2,
+    rarity = 3,
     pos = { x = 2, y = 1 },
-    cost = 6,
+    cost = 8,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability and card.ability.extra) or self.config.extra
@@ -287,9 +287,9 @@ SMODS.Joker {
         "{C:attention}Editions{} in your deck"
     },
     config = { extra = { xmult = 1.0, xmult_gain = 0.1 } },
-    rarity = 3,
+    rarity = 2,
     pos = { x = 4, y = 1 },
-    cost = 8,
+    cost = 6,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         local ex = (card and card.ability and card.ability.extra) or self.config.extra
@@ -386,9 +386,9 @@ SMODS.Joker {
         "{C:attention}Lucky Card{}"
     },
     config = { extra = { pair_cash = 3, pair_mult = 15, triple_cash = 12, triple_xmult = 2.5, jackpot_cash = 35, jackpot_xmult = 4.0, challenge_idx = 1, bet_placed = false, bet_amount = 0, challenge_completed = false, last_payout_text = "", sprite_pos = { x = 0, y = 0 }, spinning = false } },
-    rarity = 2,
+    rarity = 3,
     pos = { x = 0, y = 0 },
-    cost = 6,
+    cost = 8,
     blueprint_compat = true,
     set_sprites = function(self, card, _front)
         if card and card.ability and card.ability.extra and card.children and card.children.center then
@@ -749,7 +749,7 @@ SMODS.Joker {
         }
     },
     config = { extra = { odds = 2 } },
-    rarity = 2,
+    rarity = 3,
     pos = { x = 1, y = 2 },
     cost = 8,
     blueprint_compat = false,
@@ -906,9 +906,9 @@ SMODS.Joker {
         }
     },
     config = {},
-    rarity = 2,
+    rarity = 3,
     pos = { x = 4, y = 2 },
-    cost = 7,
+    cost = 8,
     blueprint_compat = false,
     calculate = function(self, card, context)
         if context.before and not context.blueprint then
@@ -956,9 +956,9 @@ SMODS.Joker {
         }
     },
     config = { extra = { mult_suit = 7, mult_wild = 15, suit = 'Hearts' } },
-    rarity = 2,
+    rarity = 1,
     pos = { x = 5, y = 2 },
-    cost = 6,
+    cost = 5,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
         ensure_charco_suit(card)
