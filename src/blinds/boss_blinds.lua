@@ -134,6 +134,46 @@ G.Witch_brew_BLIND_THEMES = {
         special_colour = HEX('b2bec3'),
         tertiary_colour = HEX('181d1e'),
         contrast = 3
+    },
+    ['chronos'] = {
+        name = 'Chronos',
+        boss_colour = HEX('5a189a'),
+        new_colour = HEX('240046'),
+        special_colour = HEX('9d4edd'),
+        tertiary_colour = HEX('10002b'),
+        contrast = 2.5
+    },
+    ['ares'] = {
+        name = 'Ares',
+        boss_colour = HEX('9b2226'),
+        new_colour = HEX('4a0505'),
+        special_colour = HEX('e63946'),
+        tertiary_colour = HEX('1e0000'),
+        contrast = 3
+    },
+    ['athena'] = {
+        name = 'Athena',
+        boss_colour = HEX('d4af37'),
+        new_colour = HEX('002855'),
+        special_colour = HEX('ffea00'),
+        tertiary_colour = HEX('001233'),
+        contrast = 2.5
+    },
+    ['hades'] = {
+        name = 'Hades',
+        boss_colour = HEX('1a1a24'),
+        new_colour = HEX('0a0a0f'),
+        special_colour = HEX('00f5d4'),
+        tertiary_colour = HEX('03045e'),
+        contrast = 3
+    },
+    ['zeus'] = {
+        name = 'Zeus',
+        boss_colour = HEX('0077b6'),
+        new_colour = HEX('03045e'),
+        special_colour = HEX('ffe600'),
+        tertiary_colour = HEX('000814'),
+        contrast = 3
     }
 }
 
@@ -824,7 +864,7 @@ SMODS.Blind {
 
             -- If the possessed Joker is a retrigger Joker, flag for ÷4 penalty instead of debuffing cards
             local target = G.GAME.doppelganger_target
-            if target and not target.debuff and context.scoring_hand then
+            if target and type(target.calculate_joker) == 'function' and not target.debuff and context.scoring_hand then
                 for _, scoring_card in ipairs(context.scoring_hand) do
                     local rep_eval = target:calculate_joker({
                         cardarea = G.play,
@@ -850,7 +890,7 @@ SMODS.Blind {
             if G.GAME.doppelganger_target then
                 G.GAME.doppelganger_target:juice_up(0.4, 0.4)
             end
-            play_sound('blind_chips', 0.8, 0.7)
+            play_sound('chips2', 0.8, 0.7)
             return {
                 x_chips = 0.25,
                 Xmult = 0.25,
@@ -894,6 +934,255 @@ SMODS.Blind {
         G.GAME.doppelganger_target = nil
         G.GAME.doppelganger_target_name = nil
         reset_witch_brew_boss_ui()
+    end
+}
+
+-- 12. Chronos (Supreme Showdown Boss)
+SMODS.Blind {
+    key = 'chronos',
+    atlas = 'witch_brew_blinds',
+    pos = { x = 0, y = 2 },
+    dollars = 10,
+    mult = 4,
+    boss = { min = 8, showdown = true },
+    showdown = true,
+    boss_colour = HEX('5a189a'),
+    in_pool = function(self)
+        return (G.GAME and G.GAME.battle_of_gods) and true or false
+    end,
+    loc_txt = {
+        name = 'Chronos',
+        text = {
+            "Hands that exceed the chip requirement",
+            "have their score reduced by 95%"
+        }
+    },
+    ease_background_colour = function(self)
+        ease_custom_blind_background(self)
+    end,
+    modify_hand = function(self, cards, poker_hands, text, mult, hand_chips)
+        if (G.GAME.chips + (hand_chips * mult)) >= G.GAME.blind.chips then
+            mult = mod_mult(math.max(1, math.floor(mult * 0.05)))
+            hand_chips = mod_chips(math.max(1, math.floor(hand_chips * 0.05)))
+            return mult, hand_chips, true
+        end
+        return mult, hand_chips, false
+    end
+}
+
+-- 13. Ares (Supreme Showdown Boss)
+SMODS.Blind {
+    key = 'ares',
+    atlas = 'witch_brew_blinds',
+    pos = { x = 1, y = 2 },
+    dollars = 10,
+    mult = 4,
+    boss = { min = 8, showdown = true },
+    showdown = true,
+    boss_colour = HEX('9b2226'),
+    in_pool = function(self)
+        return (G.GAME and G.GAME.battle_of_gods) and true or false
+    end,
+    loc_txt = {
+        name = 'Ares',
+        text = {
+            "1 in 5 chance to destroy",
+            "played cards after scoring"
+        }
+    },
+    ease_background_colour = function(self)
+        ease_custom_blind_background(self)
+    end,
+    calculate = function(self, card, context)
+        if context.after and context.scoring_hand and #context.scoring_hand > 0 then
+            if pseudorandom('ares_destroy') < G.GAME.probabilities.normal / 5 then
+                for _, c in ipairs(context.scoring_hand) do
+                    c.destroyed = true
+                    c:start_dissolve()
+                end
+                return {
+                    message = 'Destroyed!',
+                    colour = HEX('9b2226')
+                }
+            end
+        end
+    end
+}
+
+-- 14. Athena (Supreme Showdown Boss)
+SMODS.Blind {
+    key = 'athena',
+    atlas = 'witch_brew_blinds',
+    pos = { x = 2, y = 2 },
+    dollars = 10,
+    mult = 4,
+    boss = { min = 8, showdown = true },
+    showdown = true,
+    boss_colour = HEX('d4af37'),
+    in_pool = function(self)
+        return (G.GAME and G.GAME.battle_of_gods) and true or false
+    end,
+    loc_txt = {
+        name = 'Athena',
+        text = {
+            "Jokers do not trigger unless",
+            "you play {C:attention}#1#{}"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local hand_name = (self.target_hand and localize(self.target_hand, 'poker_hands')) or 'Pair'
+        return { vars = { hand_name } }
+    end,
+    ease_background_colour = function(self)
+        ease_custom_blind_background(self)
+    end,
+    set_blind = function(self, reset, silent)
+        local eligible = {'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House'}
+        self.target_hand = pseudorandom_element(eligible, pseudoseed('athena_command'))
+    end,
+    modify_hand = function(self, cards, poker_hands, text, mult, hand_chips)
+        local matches = (text == self.target_hand)
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                j:set_debuff(not matches)
+            end
+        end
+        return mult, hand_chips, false
+    end,
+    rebalance = function(self)
+        local hand_name = nil
+        if G.hand and G.hand.highlighted and #G.hand.highlighted > 0 then
+            local text = G.FUNCS.get_poker_hand_info(G.hand.highlighted)
+            hand_name = text
+        end
+        local matches = (hand_name == self.target_hand)
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                j:set_debuff(not matches)
+            end
+        end
+    end,
+    defeat = function(self)
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                j:set_debuff(false)
+            end
+        end
+        reset_witch_brew_boss_ui()
+    end,
+    disable = function(self)
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                j:set_debuff(false)
+            end
+        end
+        reset_witch_brew_boss_ui()
+    end
+}
+
+-- 15. Hades (Supreme Showdown Boss)
+SMODS.Blind {
+    key = 'hades',
+    atlas = 'witch_brew_blinds',
+    pos = { x = 3, y = 2 },
+    dollars = 10,
+    mult = 4,
+    boss = { min = 8, showdown = true },
+    showdown = true,
+    boss_colour = HEX('1a1a24'),
+    in_pool = function(self)
+        return (G.GAME and G.GAME.battle_of_gods) and true or false
+    end,
+    loc_txt = {
+        name = 'Hades',
+        text = {
+            "1 in 4 chance to lose all money on play,",
+            "1 in 20 chance to destroy hand after scoring"
+        }
+    },
+    ease_background_colour = function(self)
+        ease_custom_blind_background(self)
+    end,
+    press_play = function(self)
+        if pseudorandom('hades_money') < G.GAME.probabilities.normal / 4 then
+            local cur = G.GAME.dollars or 0
+            if cur > 0 then
+                ease_dollars(-cur)
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'immediate',
+                    func = function()
+                        attention_text({
+                            text = 'Bankrupt!',
+                            scale = 1.3,
+                            hold = 1.4,
+                            major = G.HUD_blind,
+                            backdrop_colour = HEX('1a1a24'),
+                            align = 'cm',
+                            offset = { x = 0, y = 0 }
+                        })
+                        return true
+                    end
+                }))
+            end
+        end
+    end,
+    calculate = function(self, card, context)
+        if context.after then
+            if pseudorandom('hades_hand') < G.GAME.probabilities.normal / 20 then
+                if G.hand and G.hand.cards then
+                    for _, c in ipairs(G.hand.cards) do
+                        c.destroyed = true
+                        c:start_dissolve()
+                    end
+                    return {
+                        message = 'Hand Annihilated!',
+                        colour = HEX('1a1a24')
+                    }
+                end
+            end
+        end
+    end
+}
+
+-- 16. Zeus (Supreme Showdown Boss)
+SMODS.Blind {
+    key = 'zeus',
+    atlas = 'witch_brew_blinds',
+    pos = { x = 4, y = 2 },
+    dollars = 10,
+    mult = 4,
+    boss = { min = 8, showdown = true },
+    showdown = true,
+    boss_colour = HEX('0077b6'),
+    in_pool = function(self)
+        return (G.GAME and G.GAME.battle_of_gods) and true or false
+    end,
+    loc_txt = {
+        name = 'Zeus',
+        text = {
+            "Scored enhanced cards",
+            "revert to base cards"
+        }
+    },
+    ease_background_colour = function(self)
+        ease_custom_blind_background(self)
+    end,
+    calculate = function(self, card, context)
+        if context.after and context.scoring_hand then
+            local cleansed = false
+            for _, c in ipairs(context.scoring_hand) do
+                if (c.config and c.config.center and c.config.center ~= G.P_CENTERS.c_base and c.config.center.set == 'Enhanced') or (c.ability and c.ability.set == 'Enhanced') then
+                    c:set_ability(G.P_CENTERS.c_base, nil, true)
+                    cleansed = true
+                end
+            end
+            if cleansed then
+                return {
+                    message = 'Cleansed!',
+                    colour = HEX('0077b6')
+                }
+            end
+        end
     end
 }
 

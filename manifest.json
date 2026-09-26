@@ -1,10 +1,10 @@
 {
     "id": "Witch_brew",
     "name": "Witch_Brew_Expansion",
-    "version": "2.3.0",
-    "version_number": "2.3.0",
+    "version": "3.0.0",
+    "version_number": "3.0.0",
     "website_url": "https://github.com/Unknow1022/Witch-Brew-Expansion",
-    "description": "Massive Balatro expansion featuring 57 Jokers, 18 custom Potions & Brews with particle FX, 16 unique Tags, Job Cards, Boss Blinds, 5 Decks, CardSleeves support, and JokerDisplay integration.",
+    "description": "Massive Balatro expansion featuring Battle of Gods mode, 50+ Jokers, 17 Boss Blinds with Supreme Showdowns, 18 Potions & Brews, 16 Tags, Job Cards, 5 Decks, CardSleeves support, and full JokerDisplay integration.",
     "dependencies": [],
     "author": [
         "Unknow102"

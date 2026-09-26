@@ -500,6 +500,54 @@ SMODS.Back {
     end
 }
 
+-- 6. Colosseum Deck (Baraja Coliseo)
+SMODS.Back {
+    name = 'Colosseum Deck',
+    key = 'coliseo',
+    atlas = 'witch_brew_decks',
+    pos = { x = 1, y = 1 },
+    config = { dollars = 30 },
+    unlocked = true,
+    discovered = true,
+    loc_txt = {
+        name = 'Colosseum Deck',
+        text = {
+            "Start run directly in",
+            "{C:attention}Battle of Gods{} mode",
+            "with {C:money}$30{} starting money"
+        }
+    },
+    loc_vars = function(self, info_queue)
+        return { vars = {} }
+    end,
+    apply = function(self)
+        G.E_MANAGER:add_event(Event({
+            func = function()
+                G.GAME.battle_of_gods = true
+                G.GAME.coliseo_deck = true
+                local cur_dollars = G.GAME.dollars or 4
+                if cur_dollars < 30 then
+                    ease_dollars(30 - cur_dollars)
+                end
+                if roll_botg_blinds and G.GAME.round_resets then
+                    local b = roll_botg_blinds(1)
+                    G.GAME.round_resets.blind_choices = G.GAME.round_resets.blind_choices or {}
+                    G.GAME.round_resets.blind_choices.Small = b.Small
+                    G.GAME.round_resets.blind_choices.Big = b.Big
+                    G.GAME.round_resets.blind_choices.Boss = b.Boss
+                    if G.GAME.round_resets.blind_states and G.GAME.round_resets.blind_states.Small == 'Select' then
+                        G.GAME.round_resets.blind = G.P_BLINDS[b.Small] or G.GAME.round_resets.blind
+                    end
+                end
+                if apply_battle_of_gods_bg then
+                    apply_battle_of_gods_bg()
+                end
+                return true
+            end
+        }))
+    end
+}
+
 -- Inject Deck localizations into G.localization.descriptions.Back with parsed entries
 function inject_witch_brew_deck_localization()
     if not (G.localization and G.localization.descriptions) then return end
@@ -546,6 +594,14 @@ function inject_witch_brew_deck_localization()
             text = {
                 "Start run with the voucher",
                 "{C:attention,T:v_Witch_brew_destilacion_recurrente}Recurring Distillation{}"
+            }
+        },
+        coliseo = {
+            name = "Colosseum Deck",
+            text = {
+                "Start run directly in",
+                "{C:attention}Battle of Gods{} mode",
+                "with {C:money}$30{} starting money"
             }
         }
     }

@@ -1,6 +1,68 @@
-patches = []
-
 [manifest]
 version = "1.0.0"
 dump_lua = true
 priority = 0
+
+[[patches]]
+[patches.pattern]
+target = 'engine/sound_manager.lua'
+pattern = 'love.audio.play(s.sound)'
+match_indent = true
+position = 'before'
+payload = '''
+if string.find(s.sound_code or '', 'bog_') and s.sound and s.sound.seek then
+    pcall(function() s.sound:seek(1, "seconds") end)
+end
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'engine/sound_manager.lua'
+pattern = 's.sound:setVolume(s.current_volume*s.original_volume*(args.sound_settings.volume/100.0)*(args.sound_settings.music_volume/100.0))'
+match_indent = true
+position = 'at'
+payload = '''
+local botg_fade = 1
+if string.find(s.sound_code or '', 'bog_') and s.sound and s.sound:isPlaying() then
+    pcall(function()
+        local pos = s.sound:tell("seconds")
+        local dur = s.sound:getDuration("seconds")
+        if pos and dur and dur > 3 then
+            local fi = math.min(1, math.max(0, (pos - 1.0) / 1.5))
+            local fo = math.min(1, math.max(0, (dur - pos) / 1.5))
+            botg_fade = math.min(fi, fo)
+            if dur - pos < 0.08 then
+                s.sound:seek(1, "seconds")
+            end
+        end
+    end)
+end
+s.sound:setVolume(botg_fade*s.current_volume*s.original_volume*(args.sound_settings.volume/100.0)*(args.sound_settings.music_volume/100.0))
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'game.lua'
+pattern = '''if G.round_eval.alignment.offset.y ~= -7.8 then'''
+match_indent = true
+position = 'before'
+payload = '''
+if not G.round_eval then return true end
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'game.lua'
+pattern = '''local vouchers_to_spawn = 0'''
+match_indent = true
+position = 'before'
+payload = '''
+if G.GAME.current_round and G.GAME.current_round.voucher then
+    if type(G.GAME.current_round.voucher) ~= 'table' then
+        G.GAME.current_round.voucher = { G.GAME.current_round.voucher, spawn = { [G.GAME.current_round.voucher] = true } }
+    elseif not G.GAME.current_round.voucher.spawn then
+        G.GAME.current_round.voucher.spawn = {}
+        for _, vk in ipairs(G.GAME.current_round.voucher) do G.GAME.current_round.voucher.spawn[vk] = true end
+    end
+end
+'''

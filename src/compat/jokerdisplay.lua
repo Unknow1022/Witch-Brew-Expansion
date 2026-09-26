@@ -1111,10 +1111,21 @@ jd_def["j_Witch_brew_thiago"] = {
         }
     },
     reminder_text = {
-        { text = "(/20 Chips)" }
+        { text = "(Per 20 Chips)" }
     },
     calc_function = function(card)
         local current_chips = (hand_chips and hand_chips > 0 and hand_chips) or 0
+        if current_chips == 0 then
+            local text, _, scoring_hand = JokerDisplay.evaluate_hand()
+            if text ~= 'Unknown' and G.GAME and G.GAME.hands and G.GAME.hands[text] then
+                current_chips = G.GAME.hands[text].chips or 0
+                if scoring_hand then
+                    for _, c in ipairs(scoring_hand) do
+                        current_chips = current_chips + (c.base and c.base.nominal or 0)
+                    end
+                end
+            end
+        end
         local req = (card.ability and card.ability.extra and card.ability.extra.chips_per_xmult) or 20
         local x = math.floor(current_chips / req)
         card.joker_display_values.x_mult = math.max(1, x)
@@ -1275,17 +1286,8 @@ jd_def["j_Witch_brew_helin"] = {
         }
     },
     reminder_text = {
-        { text = "(1st Hand)" }
-    },
-    calc_function = function(card)
-        local is_first = G.GAME and G.GAME.current_round and G.GAME.current_round.hands_played == 0
-        card.joker_display_values.active = is_first
-    end,
-    style_function = function(card, text, reminder_text, extra)
-        if text and text.children and text.children[1] then
-            text.children[1].config.colour = card.joker_display_values.active and G.C.DARK_EDITION or G.C.UI.TEXT_INACTIVE
-        end
-    end
+        { text = "(End of Scoring)" }
+    }
 }
 
 -- 42. RayTracing
@@ -1380,7 +1382,7 @@ jd_def["j_Witch_brew_yairo"] = {
 -- Kyra (Secret)
 jd_def["j_Witch_brew_kyra"] = {
     text = {
-        { text = "Potion", colour = G.C.GREEN }
+        { text = "Brew Potion", colour = G.C.GREEN }
     },
     reminder_text = {
         { text = "($2)" }
@@ -1855,12 +1857,25 @@ jd_def["j_Witch_brew_mad_clockmaker"] = {
 -- Catalyst
 jd_def["j_Witch_brew_catalyst"] = {
     text = {
-        { text = "1/3 " },
-        { text = "Retrigger + X2.5", colour = G.C.XMULT }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            },
+            border_colour = G.C.XMULT
+        }
     },
     reminder_text = {
-        { text = "(Random Joker)" }
-    }
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "odds" },
+        { text = " Retrigger)" }
+    },
+    calc_function = function(card)
+        local ex = card.ability and card.ability.extra or {}
+        card.joker_display_values.x_mult = ex.x_mult or 2.5
+        local prob = (G.GAME and G.GAME.probabilities.normal) or 1
+        card.joker_display_values.odds = "" .. prob .. "/" .. (ex.odds or 3)
+    end
 }
 
 -- Graffiti Artist
@@ -1906,22 +1921,22 @@ jd_def["j_Witch_brew_entomologist"] = {
 -- World Devourer (Legendary)
 jd_def["j_Witch_brew_world_devourer"] = {
     text = {
-        { text = "+" },
-        { ref_table = "card.joker_display_values", ref_value = "chips", retrigger_type = "chips" },
-        { text = " / +" },
-        { ref_table = "card.joker_display_values", ref_value = "mult", retrigger_type = "mult" }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            }
+        }
     },
-    text_config = { colour = G.C.CHIPS },
     reminder_text = {
         { text = "(" },
-        { ref_table = "card.joker_display_values", ref_value = "devoured_str" },
+        { ref_table = "card.joker_display_values", ref_value = "blinds_str" },
         { text = ")" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
-        card.joker_display_values.chips = ex.total_chips or 0
-        card.joker_display_values.mult = ex.total_mult or 0
-        card.joker_display_values.devoured_str = (ex.boss_defeats or 0) .. " Devoured"
+        card.joker_display_values.x_mult = ex.xmult or 1
+        card.joker_display_values.blinds_str = (ex.blinds_defeated or 0) .. " Blinds"
     end
 }
 
@@ -1976,10 +1991,10 @@ jd_def["j_Witch_brew_star_chronicler"] = {
 -- Astra
 jd_def["j_Witch_brew_astra"] = {
     text = {
-        { text = "+2 All Levels", colour = G.C.PLANET }
+        { text = "2X Planets", colour = G.C.SECONDARY_SET.Planet }
     },
     reminder_text = {
-        { text = "(On Acquire)" }
+        { text = "(Black Hole +3)" }
     }
 }
 
@@ -1994,7 +2009,7 @@ jd_def["j_Witch_brew_marie"] = {
         }
     },
     reminder_text = {
-        { text = "(Enhance / Retriggers)" }
+        { text = "(Enhanced Cards)" }
     },
     calc_function = function(card)
         local text, _, scoring_hand = JokerDisplay.evaluate_hand()
@@ -2015,6 +2030,14 @@ jd_def["j_Witch_brew_marie"] = {
         local mult_per = ex.x_mult or 2
         card.joker_display_values.x_mult = count > 0 and (mult_per ^ count) or 1.0
         card.joker_display_values.active = count > 0
+    end,
+    retrigger_function = function(playing_card, scoring_hand, held_in_hand, joker_card)
+        if held_in_hand or not scoring_hand then return 0 end
+        if not JokerDisplay.in_scoring(playing_card, scoring_hand) then return 0 end
+        local has_seal = (playing_card.seal ~= nil and playing_card.seal ~= '')
+        local has_ed = (playing_card.edition ~= nil and not playing_card.edition.base)
+        local reps = (has_seal and 1 or 0) + (has_ed and 1 or 0)
+        return reps * JokerDisplay.calculate_joker_triggers(joker_card)
     end
 }
 
@@ -2039,9 +2062,13 @@ jd_def["j_Witch_brew_sally"] = {
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
         local prog = ex.progress or 0
-        local need = ex.needed or 1
-        local quest = ex.quest or "Active"
-        card.joker_display_values.quest_str = quest .. " (" .. prog .. "/" .. need .. ")"
+        local need = ex.needed or 3
+        local quest = ex.quest or "Play 3 Hands"
+        if ex.completed then
+            card.joker_display_values.quest_str = "Completed!"
+        else
+            card.joker_display_values.quest_str = quest .. " (" .. prog .. "/" .. need .. ")"
+        end
     end
 }
 
@@ -2051,8 +2078,31 @@ jd_def["j_Witch_brew_brainprint"] = {
         { text = "Copies Left & Right", colour = G.C.BLUE }
     },
     reminder_text = {
-        { text = "(2 Minds)" }
-    }
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "copy_str" },
+        { text = ")" }
+    },
+    calc_function = function(card)
+        local left_name = "None"
+        local right_name = "None"
+        if G.jokers and G.jokers.cards then
+            local my_idx = nil
+            for idx, j in ipairs(G.jokers.cards) do
+                if j == card then my_idx = idx; break end
+            end
+            if my_idx then
+                local lj = (my_idx > 1) and G.jokers.cards[my_idx - 1]
+                local rj = (my_idx < #G.jokers.cards) and G.jokers.cards[my_idx + 1]
+                if lj and lj.config and lj.config.center then
+                    left_name = (localize and localize{type = 'name_text', key = lj.config.center.key, set = 'Joker'}) or lj.ability.name or "Left"
+                end
+                if rj and rj.config and rj.config.center then
+                    right_name = (localize and localize{type = 'name_text', key = rj.config.center.key, set = 'Joker'}) or rj.ability.name or "Right"
+                end
+            end
+        end
+        card.joker_display_values.copy_str = left_name .. " + " .. right_name
+    end
 }
 
 -- Vampiric Midas (Vampire + Midas)
@@ -2077,11 +2127,20 @@ jd_def["j_Witch_brew_vampiric_midas"] = {
 -- Certified Programming (Certificate + Coding)
 jd_def["j_Witch_brew_certified_programming"] = {
     text = {
-        { text = "+1 Card w/ Seal", colour = G.C.GREEN }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            }
+        }
     },
     reminder_text = {
-        { text = "(Round Start)" }
-    }
+        { text = "(+2 Cards w/ Seal)" }
+    },
+    calc_function = function(card)
+        local ex = card.ability and card.ability.extra or {}
+        card.joker_display_values.x_mult = ex.xmult or 1.0
+    end
 }
 
 -- Galactic Traveler (Astronomer + Satellite)
@@ -2095,7 +2154,7 @@ jd_def["j_Witch_brew_galactic_traveler"] = {
         }
     },
     reminder_text = {
-        { text = "(2X Planet Sell)" }
+        { text = "(Free Planets)" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
@@ -2106,10 +2165,10 @@ jd_def["j_Witch_brew_galactic_traveler"] = {
 -- Colorful Street (Four Fingers + Shortcut + Smeared)
 jd_def["j_Witch_brew_colorful_street"] = {
     text = {
-        { text = "Wild Connections", colour = G.C.SECONDARY_SET.Enhanced }
+        { text = "4-Card Straights & Flushes", colour = G.C.ATTENTION }
     },
     reminder_text = {
-        { text = "(Straights & Flushes)" }
+        { text = "(Shortcut + Smeared)" }
     }
 }
 
@@ -2124,7 +2183,7 @@ jd_def["j_Witch_brew_mime_king"] = {
         }
     },
     reminder_text = {
-        { text = "(Held Kings 2X)" }
+        { text = "(Held Kings 2X, Reps +2)" }
     },
     calc_function = function(card)
         local count = 0
@@ -2133,7 +2192,7 @@ jd_def["j_Witch_brew_mime_king"] = {
                 if not c.highlighted then
                     local id = (c.get_id and c:get_id()) or (c.base and c.base.id)
                     if id == 13 then
-                        count = count + 1
+                        count = count + 3
                     end
                 end
             end
@@ -2142,26 +2201,70 @@ jd_def["j_Witch_brew_mime_king"] = {
         local mult_per = ex.x_mult or 2
         card.joker_display_values.x_mult = count > 0 and (mult_per ^ count) or 1.0
         card.joker_display_values.active = count > 0
+    end,
+    retrigger_function = function(playing_card, scoring_hand, held_in_hand, joker_card)
+        if not held_in_hand then return 0 end
+        return 2 * JokerDisplay.calculate_joker_triggers(joker_card)
     end
 }
 
 -- Photo Album (Photograph + Hanging Chad)
 jd_def["j_Witch_brew_photo_album"] = {
     text = {
-        { text = "3X Retrigger", colour = G.C.PURPLE }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            },
+            border_colour = G.C.XMULT
+        }
     },
     reminder_text = {
-        { text = "(1st Card 2X Mult)" }
-    }
+        { text = "(1st Card +3, Face +1)" }
+    },
+    calc_function = function(card)
+        local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+        local has_face = false
+        if scoring_hand then
+            for _, c in ipairs(scoring_hand) do
+                if c.is_face and c:is_face() then
+                    has_face = true
+                    break
+                end
+            end
+        end
+        local xm = (card.ability and card.ability.extra and card.ability.extra.x_mult) or 2.5
+        card.joker_display_values.x_mult = has_face and xm or 1.0
+        card.joker_display_values.active = has_face
+    end,
+    style_function = function(card, text, reminder_text, extra)
+        if text and text.children and text.children[1] then
+            text.children[1].config.colour = card.joker_display_values.active and G.C.XMULT or G.C.UI.TEXT_INACTIVE
+        end
+    end,
+    retrigger_function = function(playing_card, scoring_hand, held_in_hand, joker_card)
+        if held_in_hand or not scoring_hand then return 0 end
+        local reps = 0
+        if playing_card == scoring_hand[1] then
+            reps = reps + 3
+        end
+        if playing_card.is_face and playing_card:is_face() then
+            reps = reps + 1
+        end
+        return reps * JokerDisplay.calculate_joker_triggers(joker_card)
+    end
 }
 
 -- Pirate Egg (Egg + Swashbuckler)
 jd_def["j_Witch_brew_pirate_egg"] = {
     text = {
-        { text = "+" },
-        { ref_table = "card.joker_display_values", ref_value = "mult", retrigger_type = "mult" }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            }
+        }
     },
-    text_config = { colour = G.C.MULT },
     reminder_text = {
         { text = "(+$" },
         { ref_table = "card.joker_display_values", ref_value = "val" },
@@ -2175,7 +2278,8 @@ jd_def["j_Witch_brew_pirate_egg"] = {
                 total_sell = total_sell + (jk.sell_cost or 1)
             end
         end
-        card.joker_display_values.mult = total_sell
+        local xm = 1 + total_sell * 0.1
+        card.joker_display_values.x_mult = string.format('%.1f', xm)
         card.joker_display_values.val = card.sell_cost or 1
     end
 }
@@ -2183,37 +2287,53 @@ jd_def["j_Witch_brew_pirate_egg"] = {
 -- Reinforced Boots (Bootstraps + Bull)
 jd_def["j_Witch_brew_reinforced_boots"] = {
     text = {
-        { text = "+" },
-        { ref_table = "card.joker_display_values", ref_value = "chips", retrigger_type = "chips" },
-        { text = " / +" },
-        { ref_table = "card.joker_display_values", ref_value = "mult", retrigger_type = "mult" }
+        { text = "+", colour = G.C.CHIPS },
+        { ref_table = "card.joker_display_values", ref_value = "chips", colour = G.C.CHIPS, retrigger_type = "chips" },
+        { text = " +", colour = G.C.MULT },
+        { ref_table = "card.joker_display_values", ref_value = "mult", colour = G.C.MULT, retrigger_type = "mult" }
     },
-    text_config = { colour = G.C.CHIPS },
     reminder_text = {
-        { text = "($ per $2)" }
+        { text = "(Per $1)" }
     },
     calc_function = function(card)
-        local dollars = (to_number and to_number(G.GAME and G.GAME.dollars)) or tonumber(G.GAME and G.GAME.dollars) or 0
-        local units = math.max(0, math.floor(dollars / 2))
-        local ex = card.ability and card.ability.extra or {}
-        card.joker_display_values.mult = units * (ex.mult_per_two or 5)
-        card.joker_display_values.chips = units * (ex.chips_per_two or 10)
+        local dollars = math.max(0, (to_number and to_number(G.GAME and G.GAME.dollars)) or tonumber(G.GAME and G.GAME.dollars) or 0)
+        card.joker_display_values.chips = dollars * 5
+        card.joker_display_values.mult = dollars * 10
     end
 }
 
 -- Wee Comedian (Wee Joker + Comedian)
 jd_def["j_Witch_brew_wee_comedian"] = {
     text = {
-        { text = "+" },
-        { ref_table = "card.joker_display_values", ref_value = "chips", retrigger_type = "chips" }
+        { text = "+", colour = G.C.CHIPS },
+        { ref_table = "card.joker_display_values", ref_value = "chips", colour = G.C.CHIPS, retrigger_type = "chips" },
+        { text = " +", colour = G.C.MULT },
+        { ref_table = "card.joker_display_values", ref_value = "mult", colour = G.C.MULT, retrigger_type = "mult" }
     },
-    text_config = { colour = G.C.CHIPS },
     reminder_text = {
-        { text = "(2s Retrigger)" }
+        { text = "(Fibonacci + 2s)" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
         card.joker_display_values.chips = ex.chips or 0
+        local fib_mult = 0
+        local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+        if scoring_hand then
+            for _, c in ipairs(scoring_hand) do
+                local id = c:get_id()
+                if id == 14 or id == 2 or id == 3 or id == 5 or id == 8 then
+                    fib_mult = fib_mult + 16 * JokerDisplay.calculate_card_triggers(c, scoring_hand)
+                end
+            end
+        end
+        card.joker_display_values.mult = fib_mult
+    end,
+    retrigger_function = function(playing_card, scoring_hand, held_in_hand, joker_card)
+        if held_in_hand or not scoring_hand then return 0 end
+        if playing_card:get_id() == 2 and JokerDisplay.in_scoring(playing_card, scoring_hand) then
+            return 2 * JokerDisplay.calculate_joker_triggers(joker_card)
+        end
+        return 0
     end
 }
 
@@ -2228,7 +2348,7 @@ jd_def["j_Witch_brew_golden_lucky_cat"] = {
         }
     },
     reminder_text = {
-        { text = "(3X Lucky Payout)" }
+        { text = "(+2 Probabilities)" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
@@ -2236,30 +2356,86 @@ jd_def["j_Witch_brew_golden_lucky_cat"] = {
     end
 }
 
--- Unrecognizable Antique (Ancient Joker + Antique)
+-- Unrecognizable Antique (Ancient Joker + Smeared Joker)
 jd_def["j_Witch_brew_unrecognizable_antique"] = {
     text = {
-        { text = "X2.5", colour = G.C.XMULT }
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult", retrigger_type = "exp" }
+            },
+            border_colour = G.C.XMULT
+        }
     },
     reminder_text = {
         { text = "(" },
         { ref_table = "card.joker_display_values", ref_value = "group_str" },
-        { text = " Suits)" }
+        { text = ")" }
     },
     calc_function = function(card)
         local ex = card.ability and card.ability.extra or {}
-        card.joker_display_values.group_str = ex.suit_group or "Red"
+        local group = ex.suit_group or "Red"
+        card.joker_display_values.group_str = (group == 'Red') and "♥ / ♦" or "♠ / ♣"
+        local count = 0
+        local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+        if scoring_hand then
+            for _, c in ipairs(scoring_hand) do
+                local match = false
+                if group == 'Red' then
+                    match = c:is_suit('Hearts') or c:is_suit('Diamonds')
+                else
+                    match = c:is_suit('Spades') or c:is_suit('Clubs')
+                end
+                if match then
+                    count = count + JokerDisplay.calculate_card_triggers(c, scoring_hand)
+                end
+            end
+        end
+        card.joker_display_values.x_mult = count > 0 and (2 ^ count) or 1.0
+        card.joker_display_values.active = (count > 0)
+    end,
+    style_function = function(card, text, reminder_text, extra)
+        if text and text.children and text.children[1] then
+            text.children[1].config.colour = card.joker_display_values.active and G.C.XMULT or G.C.UI.TEXT_INACTIVE
+        end
     end
 }
 
 -- Macabre Emoji (Scary Face + Smiley Face)
 jd_def["j_Witch_brew_macabre_emoji"] = {
     text = {
-        { text = "+100 Chips / +20 Mult", colour = G.C.CHIPS }
+        { text = "+", colour = G.C.CHIPS },
+        { ref_table = "card.joker_display_values", ref_value = "chips", colour = G.C.CHIPS, retrigger_type = "chips" },
+        { text = " +", colour = G.C.MULT },
+        { ref_table = "card.joker_display_values", ref_value = "mult", colour = G.C.MULT, retrigger_type = "mult" }
     },
     reminder_text = {
         { text = "(Face Cards)" }
-    }
+    },
+    calc_function = function(card)
+        local count = 0
+        local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+        if scoring_hand then
+            for _, c in ipairs(scoring_hand) do
+                if c.is_face and c:is_face() then
+                    count = count + JokerDisplay.calculate_card_triggers(c, scoring_hand)
+                end
+            end
+        end
+        card.joker_display_values.chips = count * 100
+        card.joker_display_values.mult = count * 20
+        card.joker_display_values.active = count > 0
+    end,
+    style_function = function(card, text, reminder_text, extra)
+        if text and text.children then
+            local col = card.joker_display_values.active and G.C.CHIPS or G.C.UI.TEXT_INACTIVE
+            local mcol = card.joker_display_values.active and G.C.MULT or G.C.UI.TEXT_INACTIVE
+            if text.children[1] then text.children[1].config.colour = col end
+            if text.children[2] then text.children[2].config.colour = col end
+            if text.children[3] then text.children[3].config.colour = mcol end
+            if text.children[4] then text.children[4].config.colour = mcol end
+        end
+    end
 }
 
 -- Universal Aliasing, Key resolver

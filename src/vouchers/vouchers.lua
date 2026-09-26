@@ -216,5 +216,87 @@ if Card and Card.use_consumeable then
     end
 end
 
+-- 7. Ambrosia (Pantheon Voucher T1)
+SMODS.Voucher {
+    key = 'ambrosia',
+    atlas = 'witch_brew_vouchers',
+    pos = { x = 0, y = 3 },
+    cost = 10,
+    config = { extra = 1 },
+    loc_txt = {
+        name = 'Ambrosia',
+        text = {
+            "{C:attention}+#1#{} Consumable slot"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or (self.config and self.config.extra) or 1
+        return { vars = { extra } }
+    end,
+    redeem = function(self, card)
+        G.GAME.used_vouchers = G.GAME.used_vouchers or {}
+        G.GAME.used_vouchers.v_Witch_brew_ambrosia = true
+        G.GAME.used_vouchers['v_Witch brew_ambrosia'] = true
+        G.GAME.used_vouchers.v_ambrosia = true
+        G.GAME.used_vouchers.ambrosia = true
+        if G.GAME.current_round and G.GAME.current_round.voucher and G.GAME.current_round.voucher.spawn then
+            G.GAME.current_round.voucher.spawn.v_Witch_brew_ambrosia = false
+            G.GAME.current_round.voucher.spawn['v_Witch brew_ambrosia'] = false
+        end
+        if G.consumeables then
+            local extra = (card and card.ability and card.ability.extra) or (self.config and self.config.extra) or 1
+            G.consumeables.config.card_limit = G.consumeables.config.card_limit + extra
+        end
+    end
+}
+
+-- 8. Nectar (Pantheon Voucher T2)
+SMODS.Voucher {
+    key = 'nectar',
+    atlas = 'witch_brew_vouchers',
+    requires = { 'v_Witch_brew_ambrosia' },
+    pos = { x = 1, y = 3 },
+    cost = 10,
+    config = { extra = 30 },
+    loc_txt = {
+        name = 'Nectar',
+        text = {
+            "Rerolling the shop reduces",
+            "{C:attention}Boss Blind{} requirement",
+            "by {C:attention}#1#%{}"
+        }
+    },
+    loc_vars = function(self, info_queue, card)
+        local extra = (card and card.ability and card.ability.extra) or (self.config and self.config.extra) or 30
+        return { vars = { extra } }
+    end,
+    redeem = function(self, card)
+        G.GAME.used_vouchers = G.GAME.used_vouchers or {}
+        G.GAME.used_vouchers.v_Witch_brew_nectar = true
+        G.GAME.used_vouchers['v_Witch brew_nectar'] = true
+        G.GAME.used_vouchers.v_nectar = true
+        G.GAME.used_vouchers.nectar = true
+        if G.GAME.current_round and G.GAME.current_round.voucher and G.GAME.current_round.voucher.spawn then
+            G.GAME.current_round.voucher.spawn.v_Witch_brew_nectar = false
+            G.GAME.current_round.voucher.spawn['v_Witch brew_nectar'] = false
+        end
+    end
+}
+
+-- Hook shop rerolls for Nectar Voucher
+if G.FUNCS and G.FUNCS.reroll_shop then
+    local orig_reroll_shop_nectar = G.FUNCS.reroll_shop
+    G.FUNCS.reroll_shop = function(e)
+        orig_reroll_shop_nectar(e)
+        if G.GAME and G.GAME.used_vouchers and (G.GAME.used_vouchers.v_Witch_brew_nectar or G.GAME.used_vouchers.v_nectar or G.GAME.used_vouchers.nectar) then
+            if G.GAME.blind and G.GAME.blind.boss and G.GAME.blind.chips then
+                G.GAME.blind.chips = math.max(1, math.floor(G.GAME.blind.chips * 0.70))
+                G.GAME.blind.chip_text = number_format(G.GAME.blind.chips)
+            end
+        end
+    end
+end
+
+
 
 

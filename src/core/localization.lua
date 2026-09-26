@@ -42,14 +42,14 @@ function save_witch_brew_config()
     local new_spectrals_and_jobs = cfg.new_spectrals_and_jobs ~= false
     local new_boss_blinds = cfg.new_boss_blinds ~= false
     local fast_animations = cfg.fast_animations == true
-    local secret_power_theme = cfg.secret_power_theme ~= false
+    local botg_music = cfg.botg_music ~= false and cfg.secret_power_theme ~= false
     local config_str = "return {\n" ..
         "    [\"new_runs\"] = " .. tostring(new_runs) .. ",\n" ..
         "    [\"new_challenges\"] = " .. tostring(new_challenges) .. ",\n" ..
         "    [\"new_spectrals_and_jobs\"] = " .. tostring(new_spectrals_and_jobs) .. ",\n" ..
         "    [\"new_boss_blinds\"] = " .. tostring(new_boss_blinds) .. ",\n" ..
         "    [\"fast_animations\"] = " .. tostring(fast_animations) .. ",\n" ..
-        "    [\"secret_power_theme\"] = " .. tostring(secret_power_theme) .. ",\n" ..
+        "    [\"botg_music\"] = " .. tostring(botg_music) .. ",\n" ..
         "}\n"
     local mod_path = (mod and mod.path) or ""
     if SMODS and SMODS.NFS and SMODS.NFS.write and mod_path ~= "" then
@@ -415,7 +415,7 @@ local function build_witch_brew_config_tab()
                                     {
                                         n = G.UIT.T,
                                         config = {
-                                            text = "v2.2.0",
+                                            text = "v3.0.0",
                                             scale = 0.22,
                                             colour = G.C.WHITE
                                         }
@@ -551,6 +551,21 @@ local function build_witch_brew_config_tab()
                                             "Enables Witch Brew Expansion's 11 Boss Blinds",
                                             "(The Pole, The Rod, The Door, etc)."
                                         }
+                                    }),
+                                    create_toggle({
+                                        label = "Battle of Gods",
+                                        w = 2.4,
+                                        scale = 0.75,
+                                        label_scale = 0.28,
+                                        ref_table = cfg,
+                                        ref_value = "battle_of_gods",
+                                        callback = function(val)
+                                            save_witch_brew_config()
+                                        end,
+                                        info = {
+                                            "Post-Ante 8 Battle of Gods mode.",
+                                            "Only appears if Amulet mod is installed."
+                                        }
                                     })
                                 }
                             },
@@ -607,21 +622,21 @@ local function build_witch_brew_config_tab()
                                         }
                                     }),
                                     create_toggle({
-                                        label = "Secret Power Theme",
+                                        label = "BotG Soundtrack",
                                         w = 2.4,
                                         scale = 0.75,
-                                        label_scale = 0.26,
+                                        label_scale = 0.28,
                                         ref_table = cfg,
-                                        ref_value = "secret_power_theme",
+                                        ref_value = "botg_music",
                                         callback = function(val)
+                                            cfg.secret_power_theme = val
                                             save_witch_brew_config()
                                         end,
                                         info = {
-                                            "Secret Power Discovered",
-                                            "(All in One Theme mix)",
-                                            "(Original By LouisF, Mix by Unknow102)",
-                                            "Dynamic theme for Secret Jokers",
-                                            "(Except: Tarot, Planets, Shop)."
+                                            "Battle of Gods Soundtrack",
+                                            "(Orchestral Joker Theme)",
+                                            "When disabled, completely turns off",
+                                            "mod custom music and restores original."
                                         }
                                     })
                                 }
@@ -657,7 +672,15 @@ if mod_init then
     if mod_init.config.new_boss_blinds == nil then mod_init.config.new_boss_blinds = true end
     if mod_init.config.fast_animations == nil then mod_init.config.fast_animations = false end
     if mod_init.config.custom_menu_bg == nil then mod_init.config.custom_menu_bg = true end
+    if mod_init.config.botg_music == nil then
+        if mod_init.config.secret_power_theme ~= nil then
+            mod_init.config.botg_music = mod_init.config.secret_power_theme
+        else
+            mod_init.config.botg_music = true
+        end
+    end
     if mod_init.config.secret_power_theme == nil then mod_init.config.secret_power_theme = true end
+    if mod_init.config.battle_of_gods == nil then mod_init.config.battle_of_gods = true end
     mod_init.config_tab = build_witch_brew_config_tab
 end
 if SMODS and SMODS.current_mod then

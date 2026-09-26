@@ -1,6 +1,6 @@
 --[[
     Witch Brew Expansion
-    Version: 2.1.4
+    Version: 3.0.0
     Author: Unknow102
     Framework: Steamodded (SMODS)
 
@@ -9,9 +9,11 @@
     Reading is recommended, and if you don't like to read, well too bad XD!"
 
     New Features:
+    - Battle of Gods: Post-Ante 8 mode with controlled scaling, Fused Blinds, and Pantheon Bosses
+    - 17 Boss Blinds including Supreme Showdowns (Chronos, Ares, Athena, Hades, Zeus)
     - CardSleeves compatibility with custom sleeves & deck fusions
     - 10 high-difficulty Synergy Challenges
-    - In-game Settings: New Runs seed variance, Job & Spectral toggles
+    - In-game Settings: Battle of Gods, New Runs seed variance, Job & Spectral toggles
     - Full JokerDisplay Suite integration
 --]]
 
@@ -21,6 +23,10 @@ local files = {
     -- Core & Engine Hooks
     "src/core/utils.lua",
     "src/core/localization.lua",
+    "src/core/battle_of_gods.lua",
+    "src/core/botg_possession.lua",
+    "src/core/botg_familiars.lua",
+    "src/core/botg_combat.lua",
 
     -- Jokers
     "src/jokers/common.lua",
@@ -38,6 +44,7 @@ local files = {
 
     -- Blinds, Decks, Vouchers & Tags
     "src/blinds/boss_blinds.lua",
+    "src/blinds/fused_blinds.lua",
     "src/decks/decks.lua",
     "src/vouchers/vouchers.lua",
     "src/tags/tags.lua",

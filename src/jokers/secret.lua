@@ -23,6 +23,13 @@ local function register_secret_joker(def)
             badges[1] = create_badge('Secret', HEX('000000'), G.C.WHITE, 1.2)
         end
     end
+    local orig_add = def.add_to_deck
+    def.add_to_deck = function(self, card, from_debuff)
+        if botg_trigger_mod_achievement then
+            botg_trigger_mod_achievement('forbidden_craft')
+        end
+        if orig_add then return orig_add(self, card, from_debuff) end
+    end
     return SMODS.Joker(def)
 end
 
@@ -1127,36 +1134,107 @@ local COMPONENT_JOKERS_BY_AMALGAM = {
     ['viajero_galactico']           = { 'j_constellation', 'j_astronomer' },
     ['colorful_street']             = { 'j_four_fingers', 'j_shortcut', 'j_smeared' },
     ['calle_colorida']               = { 'j_four_fingers', 'j_shortcut', 'j_smeared' },
+    ['unrecognizable_antique']       = { 'j_ancient', 'j_smeared' },
+    ['antiguedad_irreconocible']     = { 'j_ancient', 'j_smeared' },
+    ['macabre_emoji']               = { 'j_smiley', 'j_scary_face' },
+    ['emoji_macabro']               = { 'j_smiley', 'j_scary_face' },
+    ['mime_king']                   = { 'j_mime', 'j_baron' },
+    ['rey_de_mimos']                = { 'j_mime', 'j_baron' },
+    ['photo_album']                 = { 'j_hanging_chad', 'j_photograph' },
+    ['album_de_fotos']              = { 'j_hanging_chad', 'j_photograph' },
+    ['pirate_egg']                  = { 'j_swashbuckler', 'j_egg' },
+    ['huevo_pirata']                = { 'j_swashbuckler', 'j_egg' },
+    ['reinforced_boots']            = { 'j_bootstraps', 'j_bull' },
+    ['botas_reforzadas']            = { 'j_bootstraps', 'j_bull' },
+    ['wee_comedian']                = { 'j_wee', 'j_hiker' },
+    ['golden_lucky_cat']            = { 'j_lucky_cat', 'j_oops' },
+    ['gato_dorado_suerte']          = { 'j_lucky_cat', 'j_oops' },
 }
 
-local AMALGAM_NAME_MAP = {
-    ['Astronomer']      = 'galactic_traveler',
-    ['Constellation']   = 'galactic_traveler',
-    ['Four Fingers']    = 'colorful_street',
-    ['Shortcut']        = 'colorful_street',
-    ['Smeared Joker']   = 'colorful_street',
-    ['Midas Mask']      = 'vampiric_midas',
-    ['Vampire']         = 'vampiric_midas',
-    ['Hologram']        = 'certified_programming',
-    ['Certificate']     = 'certified_programming',
-    ['Blueprint']       = 'brainprint',
-    ['Brainstorm']      = 'brainprint',
+local AMALGAM_CONSTITUENTS_MAP = {
+    ['Astronomer']          = { 'galactic_traveler', 'viajero_galactico' },
+    ['j_astronomer']        = { 'galactic_traveler', 'viajero_galactico' },
+    ['Constellation']       = { 'galactic_traveler', 'viajero_galactico' },
+    ['j_constellation']     = { 'galactic_traveler', 'viajero_galactico' },
+    ['Four Fingers']        = { 'colorful_street', 'calle_colorida' },
+    ['j_four_fingers']      = { 'colorful_street', 'calle_colorida' },
+    ['Cuatro Dedos']        = { 'colorful_street', 'calle_colorida' },
+    ['Shortcut']            = { 'colorful_street', 'calle_colorida' },
+    ['j_shortcut']          = { 'colorful_street', 'calle_colorida' },
+    ['Atajo']               = { 'colorful_street', 'calle_colorida' },
+    ['Smeared Joker']       = { 'colorful_street', 'calle_colorida', 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['j_smeared']           = { 'colorful_street', 'calle_colorida', 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Comodín Manchado']    = { 'colorful_street', 'calle_colorida', 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Comodin Manchado']    = { 'colorful_street', 'calle_colorida', 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Ancient Joker']       = { 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['j_ancient']           = { 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Comodín Antiguo']     = { 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Comodin Antiguo']     = { 'unrecognizable_antique', 'antiguedad_irreconocible' },
+    ['Midas Mask']          = { 'vampiric_midas', 'midas_vampirico' },
+    ['j_midas_mask']        = { 'vampiric_midas', 'midas_vampirico' },
+    ['Máscara de Midas']    = { 'vampiric_midas', 'midas_vampirico' },
+    ['Vampire']             = { 'vampiric_midas', 'midas_vampirico' },
+    ['j_vampire']           = { 'vampiric_midas', 'midas_vampirico' },
+    ['Vampiro']             = { 'vampiric_midas', 'midas_vampirico' },
+    ['Hologram']            = { 'certified_programming', 'programacion_certificacion' },
+    ['j_hologram']          = { 'certified_programming', 'programacion_certificacion' },
+    ['Holograma']           = { 'certified_programming', 'programacion_certificacion' },
+    ['Certificate']         = { 'certified_programming', 'programacion_certificacion' },
+    ['j_certificate']       = { 'certified_programming', 'programacion_certificacion' },
+    ['Certificado']         = { 'certified_programming', 'programacion_certificacion' },
+    ['Blueprint']           = { 'brainprint' },
+    ['j_blueprint']         = { 'brainprint' },
+    ['Brainstorm']          = { 'brainprint' },
+    ['j_brainstorm']        = { 'brainprint' },
+    ['Mime']                = { 'mime_king', 'rey_de_mimos' },
+    ['j_mime']              = { 'mime_king', 'rey_de_mimos' },
+    ['Baron']               = { 'mime_king', 'rey_de_mimos' },
+    ['j_baron']             = { 'mime_king', 'rey_de_mimos' },
+    ['Hanging Chad']        = { 'photo_album', 'album_de_fotos' },
+    ['j_hanging_chad']      = { 'photo_album', 'album_de_fotos' },
+    ['Photograph']          = { 'photo_album', 'album_de_fotos' },
+    ['j_photograph']        = { 'photo_album', 'album_de_fotos' },
+    ['Swashbuckler']        = { 'pirate_egg', 'huevo_pirata' },
+    ['j_swashbuckler']      = { 'pirate_egg', 'huevo_pirata' },
+    ['Egg']                 = { 'pirate_egg', 'huevo_pirata' },
+    ['j_egg']               = { 'pirate_egg', 'huevo_pirata' },
+    ['Bootstraps']          = { 'reinforced_boots', 'botas_reforzadas' },
+    ['j_bootstraps']        = { 'reinforced_boots', 'botas_reforzadas' },
+    ['Bull']                = { 'reinforced_boots', 'botas_reforzadas' },
+    ['j_bull']              = { 'reinforced_boots', 'botas_reforzadas' },
+    ['Wee Joker']           = { 'wee_comedian' },
+    ['j_wee']               = { 'wee_comedian' },
+    ['Hiker']               = { 'wee_comedian' },
+    ['j_hiker']             = { 'wee_comedian' },
+    ['Lucky Cat']           = { 'golden_lucky_cat', 'gato_dorado_suerte' },
+    ['j_lucky_cat']         = { 'golden_lucky_cat', 'gato_dorado_suerte' },
+    ['Oops! All 6s']        = { 'golden_lucky_cat', 'gato_dorado_suerte' },
+    ['j_oops']              = { 'golden_lucky_cat', 'gato_dorado_suerte' },
+    ['Smiley Face']         = { 'macabre_emoji', 'emoji_macabro' },
+    ['j_smiley']            = { 'macabre_emoji', 'emoji_macabro' },
+    ['Scary Face']          = { 'macabre_emoji', 'emoji_macabro' },
+    ['j_scary_face']        = { 'macabre_emoji', 'emoji_macabro' },
 }
 
 -- Hook find_joker so Amalgams count as possessing their constituent jokers
 local orig_find_joker = find_joker
 function find_joker(name, non_debuff)
     local jokers = orig_find_joker and orig_find_joker(name, non_debuff) or {}
-    local amalgam_match = AMALGAM_NAME_MAP[name]
-    if amalgam_match and G.jokers and G.jokers.cards then
+    local amalgam_matches = AMALGAM_CONSTITUENTS_MAP[name]
+    if amalgam_matches and G.jokers and G.jokers.cards then
         for _, v in ipairs(G.jokers.cards) do
-            if v and card_has_key(v, amalgam_match) and (non_debuff or not v.debuff) then
-                local already_in = false
-                for _, existing in ipairs(jokers) do
-                    if existing == v then already_in = true; break end
-                end
-                if not already_in then
-                    table.insert(jokers, v)
+            if v and (non_debuff or not v.debuff) then
+                for _, a_key in ipairs(amalgam_matches) do
+                    if card_has_key(v, a_key) then
+                        local already_in = false
+                        for _, existing in ipairs(jokers) do
+                            if existing == v then already_in = true; break end
+                        end
+                        if not already_in then
+                            table.insert(jokers, v)
+                        end
+                        break
+                    end
                 end
             end
         end
@@ -1282,20 +1360,44 @@ register_secret_joker {
     loc_txt = {
         name = 'Astra',
         text = {
-            "When acquired, permanently",
-            "levels up all {C:attention}poker hands{}",
-            "by {C:attention}+#1#{}"
+            "Used {C:planet}Planet{} cards give",
+            "{C:attention}X2{} their level up effect.",
+            "{C:spectral}Black Hole{} upgrades all",
+            "poker hands by {C:attention}3{} levels"
         }
     },
-    config = { extra = { levels = 2 } },
-    blueprint_compat = false,
-    loc_vars = function(self, info_queue, card)
-        return { vars = { (card and card.ability and card.ability.extra and card.ability.extra.levels) or 2 } }
-    end,
-    add_to_deck = function(self, card, from_debuff)
-        if not from_debuff then
-            for hand_name, _ in pairs(G.GAME.hands) do
-                level_up_hand(card, hand_name, true, (card.ability and card.ability.extra and card.ability.extra.levels) or 2)
+    config = { extra = { planet_mult = 2, black_hole_levels = 3 } },
+    blueprint_compat = true,
+    calculate = function(self, card, context)
+        if context.using_consumeable then
+            local cons = context.consumeable
+            if cons then
+                local k = (cons.config and cons.config.center and cons.config.center.key)
+                    or (cons.ability and cons.ability.name)
+                    or ''
+                local is_black_hole = (k == 'c_black_hole' or cons.ability.name == 'Black Hole' or string.find(string.lower(tostring(k)), 'black_hole'))
+                local is_planet = (cons.ability and cons.ability.set == 'Planet')
+
+                if is_black_hole then
+                    for hand_name, _ in pairs(G.GAME.hands) do
+                        level_up_hand(card, hand_name, true, 2)
+                    end
+                    return {
+                        message = '+3 Levels!',
+                        colour = G.C.SECONDARY_SET.Spectral
+                    }
+                elseif is_planet then
+                    local target_hand = (cons.ability and (cons.ability.hand_type or (cons.ability.consumeable and cons.ability.consumeable.hand_type)))
+                        or (cons.config and cons.config.center and cons.config.center.config and cons.config.center.config.hand_type)
+                    if target_hand and G.GAME.hands[target_hand] then
+                        local extra_levels = (cons.ability and cons.ability.consumeable and cons.ability.consumeable.level) or 1
+                        level_up_hand(card, target_hand, nil, extra_levels)
+                        return {
+                            message = 'X2 Level Up!',
+                            colour = G.C.SECONDARY_SET.Planet
+                        }
+                    end
+                end
             end
         end
     end

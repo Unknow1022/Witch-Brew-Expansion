@@ -407,6 +407,14 @@ function Card:open()
         (self.ability.name and string.find(self.ability.name, 'job_pack')) or
         (self.config and self.config.center and (self.config.center.kind == 'Job' or (self.config.center.key and string.find(self.config.center.key, 'job_pack'))))
     )
+    local is_mod_pack = self.ability and self.ability.set == 'Booster' and (
+        is_job_pack or
+        (self.ability.name and (string.find(self.ability.name, 'witch') or string.find(self.ability.name, 'alchemy') or string.find(self.ability.name, 'potion'))) or
+        (self.config and self.config.center and self.config.center.key and (string.find(self.config.center.key, 'Witch_brew') or string.find(self.config.center.key, 'witch') or string.find(self.config.center.key, 'alchemy')))
+    )
+    if is_mod_pack and botg_trigger_mod_achievement then
+        botg_trigger_mod_achievement('herb_forager')
+    end
     local ret = card_open_ref(self)
     if is_job_pack then
         ease_job_pack_background()
@@ -466,6 +474,9 @@ function Card:redeem(...)
             G.PROFILES[G.SETTINGS.profile].blank_vouchers_bought = (G.PROFILES[G.SETTINGS.profile].blank_vouchers_bought or 0) + 1
         end
         check_for_unlock({ type = 'blank_voucher_bought' })
+    end
+    if key and (string.find(key, 'catador') or string.find(key, 'critico') or string.find(key, 'Witch_brew')) then
+        if botg_trigger_mod_achievement then botg_trigger_mod_achievement('royal_connoisseur') end
     end
 
     local ret = card_redeem_ref(self, ...)
@@ -802,21 +813,34 @@ function Card:use_consumeable(area, copier)
 
     if set == 'Potion' and (ckey == 'c_Witch_brew_potion_amalgam' or ckey == 'potion_amalgam' or ckey == 'c_Witch_brew_potion_amalgama' or ckey == 'potion_amalgama' or string.find(ckey, 'amalgam', 1, true) or string.find(ckey, 'amalgama', 1, true)) then
         -- Amalgam Potion: Resonant deep thud + magical prism chord
+        if botg_trigger_mod_achievement then
+            botg_trigger_mod_achievement('witcher_amalgam')
+            botg_trigger_mod_achievement('apprentice_alchemist')
+        end
         play_sound('timpani', 0.6, 1.0)
         play_sound('foil1', 0.75, 0.7)
         play_sound('polychrome1', 1.25, 0.85)
         play_sound('tarot2', 0.85, 0.6)
     elseif set == 'Potion' then
         -- Regular Potions: Cork pop + effervescence
+        if botg_trigger_mod_achievement then
+            botg_trigger_mod_achievement('apprentice_alchemist')
+        end
         play_sound('cancel', 1.35, 0.9)
         play_sound('tarot2', 1.25, 0.7)
     elseif set == 'Job' or string.find(ckey, '_job', 1, true) then
         -- Job Cards: Wax seal + paper crunch + coin ding
+        if botg_trigger_mod_achievement then
+            botg_trigger_mod_achievement('first_contract')
+        end
         play_sound('crumple1', 0.9, 0.9)
         play_sound('tarot1', 0.7, 0.85)
         play_sound('coin6', 1.45, 0.75)
     elseif set == 'Spectral' and (string.find(ckey, 'Witch_brew') or (self.config and self.config.center and self.config.center.atlas == 'c_spectrals')) then
         -- Mod Spectrals: Deep ethereal gong + spectral chime
+        if botg_trigger_mod_achievement then
+            botg_trigger_mod_achievement('mutagenic_trial')
+        end
         play_sound('timpani', 0.5, 0.95)
         play_sound('tarot2', 0.65, 0.8)
         play_sound('foil1', 0.75, 0.7)
@@ -1386,7 +1410,7 @@ function Card:calculate_joker(context, ...)
                     G.GAME.blind:juice_up(0.4, 0.4)
                 end
                 self:juice_up(0.4, 0.4)
-                play_sound('blind_chips', 0.8, 0.7)
+                play_sound('chips2', 0.8, 0.7)
             end
         end
     end
@@ -1878,15 +1902,30 @@ function Card:load(cardTable, other_card)
     return card_load_ref(self, cardTable, other_card)
 end
 
--- Masterful Joker: Mastered ranks count as any suit
+-- Masterful Joker & Smeared Amalgams: Mastered ranks & Smeared suit equivalency
 local card_is_suit_ref = Card.is_suit
 function Card:is_suit(suit, bypass_debuff, flush_calc)
+    if self.debuff and not bypass_debuff then return false end
     if G and G.jokers and G.jokers.cards then
         for _, j in ipairs(G.jokers.cards) do
-            if card_has_key(j, 'masterful_joker') and not j.debuff then
-                if j.ability and j.ability.extra and j.ability.extra.mastered_ranks then
-                    local rank = self.base and self.base.value
-                    if rank and j.ability.extra.mastered_ranks[rank] then
+            if not j.debuff or bypass_debuff then
+                if card_has_key(j, 'masterful_joker') then
+                    if j.ability and j.ability.extra and j.ability.extra.mastered_ranks then
+                        local rank = self.base and self.base.value
+                        if rank and j.ability.extra.mastered_ranks[rank] then
+                            return true
+                        end
+                    end
+                end
+                -- Unrecognizable Antique & Colorful Street act as Smeared Joker:
+                -- Hearts & Diamonds count as same suit, Spades & Clubs count as same suit
+                if card_has_key(j, 'unrecognizable_antique') or card_has_key(j, 'antiguedad_irreconocible') or
+                   card_has_key(j, 'colorful_street') or card_has_key(j, 'calle_colorida') then
+                    local s = self.base and self.base.suit
+                    if (s == 'Hearts' or s == 'Diamonds') and (suit == 'Hearts' or suit == 'Diamonds') then
+                        return true
+                    end
+                    if (s == 'Spades' or s == 'Clubs') and (suit == 'Spades' or suit == 'Clubs') then
                         return true
                     end
                 end
@@ -1894,6 +1933,90 @@ function Card:is_suit(suit, bypass_debuff, flush_calc)
         end
     end
     return card_is_suit_ref(self, suit, bypass_debuff, flush_calc)
+end
+
+-- Colorful Street Hand Evaluation Handlers (4-card Straights and Flushes, 1-gap Straights)
+if get_flush then
+    local orig_get_flush = get_flush
+    function get_flush(hand)
+        local ret = orig_get_flush(hand)
+        if ret and #ret > 0 then return ret end
+        local has_cs = false
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                if not j.debuff and (card_has_key(j, 'colorful_street') or card_has_key(j, 'calle_colorida')) then
+                    has_cs = true; break
+                end
+            end
+        end
+        if has_cs and hand and #hand >= 4 and #hand <= 5 then
+            local suits = { "Spades", "Hearts", "Clubs", "Diamonds" }
+            for _, s in ipairs(suits) do
+                local t = {}
+                for i = 1, #hand do
+                    if hand[i]:is_suit(s, nil, true) then
+                        table.insert(t, hand[i])
+                    end
+                end
+                if #t >= 4 then
+                    return { t }
+                end
+            end
+        end
+        return ret or {}
+    end
+end
+
+if get_straight then
+    local orig_get_straight = get_straight
+    function get_straight(hand)
+        local ret = orig_get_straight(hand)
+        if ret and #ret > 0 then return ret end
+        local has_cs = false
+        if G.jokers and G.jokers.cards then
+            for _, j in ipairs(G.jokers.cards) do
+                if not j.debuff and (card_has_key(j, 'colorful_street') or card_has_key(j, 'calle_colorida')) then
+                    has_cs = true; break
+                end
+            end
+        end
+        if has_cs and hand and #hand >= 4 and #hand <= 5 then
+            local IDS = {}
+            for i = 1, #hand do
+                local id = hand[i]:get_id()
+                if id and id > 1 and id < 15 then
+                    if IDS[id] then
+                        table.insert(IDS[id], hand[i])
+                    else
+                        IDS[id] = { hand[i] }
+                    end
+                end
+            end
+            local straight_length = 0
+            local skipped_rank = false
+            local t = {}
+            for j = 1, 14 do
+                local rank_idx = (j == 1 and 14 or j)
+                if IDS[rank_idx] then
+                    straight_length = straight_length + 1
+                    skipped_rank = false
+                    for _, v in ipairs(IDS[rank_idx]) do
+                        table.insert(t, v)
+                    end
+                elseif not skipped_rank and j ~= 14 then
+                    skipped_rank = true
+                else
+                    straight_length = 0
+                    skipped_rank = false
+                    t = {}
+                end
+                if straight_length >= 4 then
+                    return { t }
+                end
+            end
+        end
+        return ret or {}
+    end
 end
 
 local function is_probability_seed(seed)
@@ -3255,45 +3378,94 @@ end
 
 local function is_secret_music_enabled()
     local cfg = (get_witch_brew_config and get_witch_brew_config())
-    if cfg and cfg.secret_power_theme == false then
+    if cfg and (cfg.botg_music == false or cfg.secret_power_theme == false) then
         return false
     end
     return true
 end
 
--- Codename: Secret Power Discovered (All in One Theme mix)
--- (Original By LouisF, Mix by Unknow102)
+-- 4-Piece Orchestral Soundtrack (Replacing Secret Joker & DM Dokuro music)
 if SMODS and SMODS.Sound then
+    local function should_play_orchestral()
+        if not is_secret_music_enabled() then return false end
+        return G.GAME and G.GAME.battle_of_gods and true or false
+    end
+
+    -- Piece 4: Booster & Special Packs (bog_packs.ogg) - Replaces any pack music
     SMODS.Sound {
-        key = "music_witch_brew_special",
-        path = "secret_joker_music.ogg",
-        pitch = 0.95,
-        volume = 0.5,
+        key = "music_bog_packs",
+        path = "bog_packs.ogg",
+        pitch = 1.0,
+        volume = 0.65,
         select_music_track = function(self)
-            if not is_secret_music_enabled() then return nil end
-            -- 1. Paquetes especiales del mod
-            if is_special_pack_open() then
-                return 15
+            if not should_play_orchestral() then return nil end
+            if (G.STAGE and G.STAGE ~= G.STAGES.RUN) or G.STATE == G.STATES.SPLASH or G.STATE == G.STATES.GAME_OVER then return nil end
+            if is_special_pack_open() or
+               (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.PLANET_PACK or
+                G.STATE == G.STATES.SPECTRAL_PACK or G.STATE == G.STATES.STANDARD_PACK or
+                G.STATE == G.STATES.BUFFOON_PACK or G.STATE == G.STATES.SMODS_BOOSTER_OPENED) or
+               (G.booster_pack and not G.booster_pack.REMOVED) then
+                return 40
             end
-            -- 2. Con Jokers Secretos / Amalgamas: reemplaza toda la música excepto Tarot, Planetas y Tienda
-            if has_secret_joker_equipped() and not is_excluded_music_state() then
-                return 15
+        end
+    }
+
+    -- Piece 3: Shop (bog_shop.ogg) - Replaces shop music
+    SMODS.Sound {
+        key = "music_bog_shop",
+        path = "bog_shop.ogg",
+        pitch = 1.0,
+        volume = 0.6,
+        select_music_track = function(self)
+            if not should_play_orchestral() then return nil end
+            if (G.STAGE and G.STAGE ~= G.STAGES.RUN) or G.STATE == G.STATES.SPLASH or G.STATE == G.STATES.GAME_OVER then return nil end
+            if G.STATE == G.STATES.SHOP or (G.shop and not G.shop.REMOVED) then
+                return 35
             end
+        end
+    }
+
+    -- Piece 2: Showdown Blinds (bog_boss.ogg) - Exclusive to Showdown Blinds
+    SMODS.Sound {
+        key = "music_bog_boss",
+        path = "bog_boss.ogg",
+        pitch = 1.0,
+        volume = 0.7,
+        select_music_track = function(self)
+            if not should_play_orchestral() then return nil end
+            if (G.STAGE and G.STAGE ~= G.STAGES.RUN) or G.STATE == G.STATES.SPLASH or G.STATE == G.STATES.GAME_OVER then return nil end
+            local is_showdown = G.GAME and G.GAME.blind and G.GAME.blind.boss and
+                (G.GAME.blind.showdown or (G.GAME.blind.config and G.GAME.blind.config.blind and G.GAME.blind.config.blind.showdown))
+            if is_showdown then
+                return 30
+            end
+        end
+    }
+
+    -- Piece 1: Normal Blinds, Regular Bosses & Blind Selection (bog_normal.ogg)
+    SMODS.Sound {
+        key = "music_bog_normal",
+        path = "bog_normal.ogg",
+        pitch = 1.0,
+        volume = 0.65,
+        select_music_track = function(self)
+            if not should_play_orchestral() then return nil end
+            if (G.STAGE and G.STAGE ~= G.STAGES.RUN) or G.STATE == G.STATES.SPLASH or G.STATE == G.STATES.GAME_OVER then return nil end
+            return 25
         end
     }
 end
 
--- Ensure secret joker music volume is properly scaled by "Volumen del juego" (Game Volume) and Master Volume
+-- Ensure music volume is properly scaled by "Volumen del juego" (Game Volume) and Master Volume
 if modulate_sound then
     local orig_modulate_sound = modulate_sound
     function modulate_sound(dt)
         local enabled = not (is_secret_music_enabled and not is_secret_music_enabled())
-        local is_secret = enabled and (
-                          (is_special_pack_open and is_special_pack_open()) or
-                          (has_secret_joker_equipped and not is_excluded_music_state and has_secret_joker_equipped() and not is_excluded_music_state())
+        local is_custom_music = enabled and (
+                          G.GAME and G.GAME.battle_of_gods and not is_excluded_music_state()
         )
         local sound_set = G.SETTINGS and G.SETTINGS.SOUND
-        if is_secret and sound_set and sound_set.music_volume and sound_set.game_sounds_volume then
+        if is_custom_music and sound_set and sound_set.music_volume and sound_set.game_sounds_volume then
             local real_music_vol = sound_set.music_volume
             local game_vol_factor = (sound_set.game_sounds_volume or 100) / 100
             sound_set.music_volume = real_music_vol * game_vol_factor
